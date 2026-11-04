@@ -1,0 +1,164 @@
+[
+  {
+    "time": 0.033158,
+    "players": [
+      {
+        "id": 13,
+        "x": 0.250091,
+        "y": 0.696021,
+        "w": 0.031635,
+        "h": 0.118786,
+        "conf": 0.8335,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.718
+      },
+      {
+        "id": 15,
+        "x": 0.252459,
+        "y": 0.67579,
+        "w": 0.026538,
+        "h": 0.097777,
+        "conf": 0.8152,
+        "role": "player",
+        "team": "neutral",
+        "team_confidence": 0
+      }
+    ]
+  },
+  {
+    "time": 1.359483,
+    "players": [
+      {
+        "id": 17,
+        "x": 0.214404,
+        "y": 0.924255,
+        "w": 0.045189,
+        "h": 0.134943,
+        "conf": 0.8001,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.758
+      },
+      {
+        "id": 22,
+        "x": 0.215242,
+        "y": 0.886796,
+        "w": 0.043801,
+        "h": 0.101257,
+        "conf": 0.4521,
+        "role": "player",
+        "team": "home",
+        "team_confidence": 0.945
+      }
+    ]
+  },
+  {
+    "time": 3.680552,
+    "players": [
+      {
+        "id": 17,
+        "x": 0.281631,
+        "y": 0.800474,
+        "w": 0.036928,
+        "h": 0.10883,
+        "conf": 0.8823,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.758
+      },
+      {
+        "id": 39,
+        "x": 0.284604,
+        "y": 0.783434,
+        "w": 0.032078,
+        "h": 0.09011,
+        "conf": 0.3009,
+        "role": "player",
+        "team": "home",
+        "team_confidence": 0.865
+      }
+    ]
+  },
+  {
+    "time": 6.996364,
+    "players": [
+      {
+        "id": 37,
+        "x": 0.773384,
+        "y": 0.790413,
+        "w": 0.03621,
+        "h": 0.125988,
+        "conf": 0.6235,
+        "role": "player",
+        "team": "home",
+        "team_confidence": 0.938
+      },
+      {
+        "id": 88,
+        "x": 0.774253,
+        "y": 0.763454,
+        "w": 0.031769,
+        "h": 0.097974,
+        "conf": 0.6114,
+        "role": "player",
+        "team": "neutral",
+        "team_confidence": 0
+      }
+    ]
+  },
+  {
+    "time": 5.338458,
+    "players": [
+      {
+        "id": 61,
+        "x": 0.471687,
+        "y": 0.582916,
+        "w": 0.030375,
+        "h": 0.092727,
+        "conf": 0.8649,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.722
+      },
+      {
+        "id": 63,
+        "x": 0.466846,
+        "y": 0.592231,
+        "w": 0.034298,
+        "h": 0.102308,
+        "conf": 0.526,
+        "role": "player",
+        "team": "neutral",
+        "team_confidence": 0
+      }
+    ]
+  },
+  {
+    "time": 6.731099,
+    "players": [
+      {
+        "id": 4,
+        "x": 0.336159,
+        "y": 0.483657,
+        "w": 0.027247,
+        "h": 0.058043,
+        "conf": 0.7538,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.443
+      },
+      {
+        "id": 73,
+        "x": 0.337044,
+        "y": 0.483708,
+        "w": 0.029985,
+        "h": 0.077386,
+        "conf": 0.7805,
+        "role": "player",
+        "team": "away",
+        "team_confidence": 0.472
+      }
+    ]
+  }
+]

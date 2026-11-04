@@ -1,0 +1,13 @@
+.venv/
+work/
+__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+.openai/
+dist/touchline-studio.zip
+*.pt
+*.onnx
+*.engine
+.idea/

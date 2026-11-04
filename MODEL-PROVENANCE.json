@@ -1,0 +1,37 @@
+{
+  "project": "Touchline Studio",
+  "git_ancestry": "independent repository; no upstream remote",
+  "default_model": {
+    "filename": "football-best.pt",
+    "type": "third-party pretrained football detector",
+    "source": "https://drive.google.com/file/d/1DC2kCygbBWUKheQ_9cFziCsYVSRw6axK/view",
+    "reference": "https://github.com/nabiutara/football_analysis",
+    "reference_commit": "e4799632cdf271cf57f4eb0c4d872cf1b7ab0f17",
+    "sha256": "53fcd08a5e5283d7bba705f07fc04022a6ab73a2ba2a847d3bc8143c9ecad2eb",
+    "classes": {
+      "0": "ball",
+      "1": "goalkeeper",
+      "2": "player",
+      "3": "referee"
+    },
+    "ownership": "Original model ownership and applicable terms remain with their respective owners."
+  },
+  "fallback_models": [
+    "yolo26n.pt",
+    "yolo26s.pt"
+  ],
+  "tracking": {
+    "default": "botsort",
+    "optional": "bytetrack",
+    "implementation": "Ultralytics built-ins",
+    "person_duplicate_iou": 0.7,
+    "score_fusion": false
+  },
+  "physical_measurements": {
+    "units": "dimensionless normalized coordinates",
+    "pitch_dimensions_meters": null,
+    "metric_speed_or_distance_enabled": false,
+    "policy": "Ask the user for verified measurements before implementing metric measurements."
+  },
+  "runtime_reference_checkout_required": false
+}

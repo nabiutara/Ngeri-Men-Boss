@@ -1,0 +1,473 @@
+{
+  "environment": "Existing Touchline Python 3.13 virtual environment",
+  "scope": "Installed distributions; source URLs are distribution-declared metadata",
+  "packages": [
+    {
+      "name": "anyio",
+      "version": "4.15.1",
+      "declared_project_urls": [
+        "Documentation, https://anyio.readthedocs.io/en/latest/",
+        "Changelog, https://anyio.readthedocs.io/en/stable/versionhistory.html",
+        "Source code, https://github.com/agronholm/anyio",
+        "Issue tracker, https://github.com/agronholm/anyio/issues"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "beautifulsoup4",
+      "version": "4.15.0",
+      "declared_project_urls": [
+        "Download, https://www.crummy.com/software/BeautifulSoup/bs4/download/",
+        "Homepage, https://www.crummy.com/software/BeautifulSoup/bs4/"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "certifi",
+      "version": "2026.10.23",
+      "declared_project_urls": [
+        "Source, https://github.com/certifi/python-certifi"
+      ],
+      "declared_home_page": "https://github.com/certifi/python-certifi"
+    },
+    {
+      "name": "charset-normalizer",
+      "version": "3.5.2",
+      "declared_project_urls": [
+        "Changelog, https://github.com/jawah/charset_normalizer/blob/master/CHANGELOG.md",
+        "Documentation, https://charset-normalizer.readthedocs.io/",
+        "Code, https://github.com/jawah/charset_normalizer",
+        "Issue tracker, https://github.com/jawah/charset_normalizer/issues"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "colorama",
+      "version": "0.4.6",
+      "declared_project_urls": [
+        "Homepage, https://github.com/tartley/colorama"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "contourpy",
+      "version": "1.4.0",
+      "declared_project_urls": [
+        "Homepage, https://github.com/contourpy/contourpy",
+        "Changelog, https://contourpy.readthedocs.io/en/latest/changelog.html",
+        "Documentation, https://contourpy.readthedocs.io",
+        "Repository, https://github.com/contourpy/contourpy"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "cycler",
+      "version": "0.12.1",
+      "declared_project_urls": [
+        "homepage, https://matplotlib.org/cycler/",
+        "repository, https://github.com/matplotlib/cycler"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "filelock",
+      "version": "4.2.4",
+      "declared_project_urls": [
+        "Documentation, https://py-filelock.readthedocs.io",
+        "Homepage, https://github.com/tox-dev/py-filelock",
+        "Source, https://github.com/tox-dev/py-filelock",
+        "Tracker, https://github.com/tox-dev/py-filelock/issues"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "fonttools",
+      "version": "4.68.0",
+      "declared_project_urls": [],
+      "declared_home_page": "http://github.com/fonttools/fonttools"
+    },
+    {
+      "name": "fsspec",
+      "version": "2026.9.0",
+      "declared_project_urls": [
+        "Changelog, https://filesystem-spec.readthedocs.io/en/latest/changelog.html",
+        "Documentation, https://filesystem-spec.readthedocs.io/en/latest/",
+        "Homepage, https://github.com/fsspec/filesystem_spec"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "gdown",
+      "version": "5.2.2",
+      "declared_project_urls": [
+        "Homepage, https://github.com/wkentaro/gdown"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "h11",
+      "version": "0.16.0",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/python-hyper/h11"
+    },
+    {
+      "name": "httpcore",
+      "version": "1.0.9",
+      "declared_project_urls": [
+        "Documentation, https://www.encode.io/httpcore",
+        "Homepage, https://www.encode.io/httpcore/",
+        "Source, https://github.com/encode/httpcore"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "httpx",
+      "version": "0.28.1",
+      "declared_project_urls": [
+        "Changelog, https://github.com/encode/httpx/blob/master/CHANGELOG.md",
+        "Documentation, https://www.python-httpx.org",
+        "Homepage, https://github.com/encode/httpx",
+        "Source, https://github.com/encode/httpx"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "idna",
+      "version": "3.20",
+      "declared_project_urls": [
+        "Changelog, https://github.com/kjd/idna/blob/master/HISTORY.md",
+        "Issue tracker, https://github.com/kjd/idna/issues",
+        "Source, https://github.com/kjd/idna"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "Jinja2",
+      "version": "3.1.6",
+      "declared_project_urls": [
+        "Changes, https://jinja.palletsprojects.com/changes/",
+        "Chat, https://discord.gg/pallets",
+        "Documentation, https://jinja.palletsprojects.com/",
+        "Donate, https://palletsprojects.com/donate",
+        "Source, https://github.com/pallets/jinja/"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "kiwisolver",
+      "version": "1.5.1",
+      "declared_project_urls": [
+        "homepage, https://github.com/nucleic/kiwi",
+        "documentation, https://kiwisolver.readthedocs.io/en/latest/",
+        "repository, https://github.com/nucleic/kiwi",
+        "changelog, https://github.com/nucleic/kiwi/blob/main/releasenotes.rst"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "lap",
+      "version": "0.5.13",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/gatagat/lap"
+    },
+    {
+      "name": "MarkupSafe",
+      "version": "3.0.4",
+      "declared_project_urls": [
+        "Donate, https://palletsprojects.com/donate",
+        "Documentation, https://markupsafe.palletsprojects.com/",
+        "Changes, https://markupsafe.palletsprojects.com/page/changes/",
+        "Source, https://github.com/pallets/markupsafe/",
+        "Chat, https://discord.gg/pallets"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "matplotlib",
+      "version": "3.11.2",
+      "declared_project_urls": [
+        "Homepage, https://matplotlib.org",
+        "Download, https://matplotlib.org/stable/install/index.html",
+        "Documentation, https://matplotlib.org",
+        "Source Code, https://github.com/matplotlib/matplotlib",
+        "Bug Tracker, https://github.com/matplotlib/matplotlib/issues",
+        "Forum, https://discourse.matplotlib.org/",
+        "Donate, https://numfocus.org/donate-to-matplotlib"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "mpmath",
+      "version": "1.3.0",
+      "declared_project_urls": [
+        "Source, https://github.com/fredrik-johansson/mpmath",
+        "Tracker, https://github.com/fredrik-johansson/mpmath/issues",
+        "Documentation, http://mpmath.org/doc/current/"
+      ],
+      "declared_home_page": "http://mpmath.org/"
+    },
+    {
+      "name": "networkx",
+      "version": "3.7",
+      "declared_project_urls": [
+        "Homepage, https://networkx.org/",
+        "Bug Tracker, https://github.com/networkx/networkx/issues",
+        "Documentation, https://networkx.org/documentation/stable/",
+        "Source Code, https://github.com/networkx/networkx"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "numpy",
+      "version": "2.5.4",
+      "declared_project_urls": [
+        "homepage, https://numpy.org",
+        "documentation, https://numpy.org/doc/",
+        "source, https://github.com/numpy/numpy",
+        "download, https://pypi.org/project/numpy/#files",
+        "tracker, https://github.com/numpy/numpy/issues",
+        "release notes, https://numpy.org/doc/stable/release"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "nvidia-ml-py",
+      "version": "13.615.71",
+      "declared_project_urls": [],
+      "declared_home_page": "https://forums.developer.nvidia.com"
+    },
+    {
+      "name": "opencv-python",
+      "version": "5.0.0.93",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/opencv/opencv-python"
+    },
+    {
+      "name": "packaging",
+      "version": "26.3",
+      "declared_project_urls": [
+        "Documentation, https://packaging.pypa.io/",
+        "Source, https://github.com/pypa/packaging"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "pillow",
+      "version": "13.0.0",
+      "declared_project_urls": [
+        "Release notes, https://pillow.readthedocs.io/en/stable/releasenotes/index.html",
+        "Changelog, https://github.com/python-pillow/Pillow/releases",
+        "Documentation, https://pillow.readthedocs.io",
+        "Funding, https://tidelift.com/lifter/search/pypi/pillow",
+        "Homepage, https://python-pillow.org",
+        "Mastodon, https://fosstodon.org/@pillow",
+        "Security, https://pillow.readthedocs.io/en/stable/handbook/security.html",
+        "Source, https://github.com/python-pillow/Pillow"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "polars",
+      "version": "2.1.0",
+      "declared_project_urls": [
+        "Homepage, https://www.pola.rs/",
+        "Documentation, https://docs.pola.rs/api/python/stable/reference/index.html",
+        "Repository, https://github.com/pola-rs/polars",
+        "Changelog, https://github.com/pola-rs/polars/releases"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "polars-runtime-32",
+      "version": "2.1.0",
+      "declared_project_urls": [
+        "Changelog, https://github.com/pola-rs/polars/releases",
+        "Documentation, https://docs.pola.rs/api/python/stable/reference/index.html",
+        "Homepage, https://www.pola.rs/",
+        "Repository, https://github.com/pola-rs/polars"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "psutil",
+      "version": "7.2.2",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/giampaolo/psutil"
+    },
+    {
+      "name": "pyparsing",
+      "version": "3.3.3",
+      "declared_project_urls": [
+        "Documentation, https://pyparsing-docs.readthedocs.io/en/latest/",
+        "Homepage, https://github.com/pyparsing/pyparsing/",
+        "Source, https://github.com/pyparsing/pyparsing.git"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "PySocks",
+      "version": "1.7.1",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/Anorov/PySocks"
+    },
+    {
+      "name": "python-dateutil",
+      "version": "3.0.0",
+      "declared_project_urls": [
+        "Documentation, https://dateutil.readthedocs.io/en/stable/",
+        "Source, https://github.com/dateutil/dateutil"
+      ],
+      "declared_home_page": "https://github.com/dateutil/dateutil"
+    },
+    {
+      "name": "PyYAML",
+      "version": "6.0.3",
+      "declared_project_urls": [
+        "Bug Tracker, https://github.com/yaml/pyyaml/issues",
+        "CI, https://github.com/yaml/pyyaml/actions",
+        "Documentation, https://pyyaml.org/wiki/PyYAMLDocumentation",
+        "Mailing lists, http://lists.sourceforge.net/lists/listinfo/yaml-core",
+        "Source Code, https://github.com/yaml/pyyaml"
+      ],
+      "declared_home_page": "https://pyyaml.org/"
+    },
+    {
+      "name": "requests",
+      "version": "2.34.2",
+      "declared_project_urls": [
+        "Documentation, https://requests.readthedocs.io",
+        "Source, https://github.com/psf/requests"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "setuptools",
+      "version": "84.2.1",
+      "declared_project_urls": [
+        "Source, https://github.com/pypa/setuptools",
+        "Documentation, https://setuptools.pypa.io/",
+        "Changelog, https://setuptools.pypa.io/en/stable/history.html"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "six",
+      "version": "1.17.0",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/benjaminp/six"
+    },
+    {
+      "name": "soupsieve",
+      "version": "3.0.4",
+      "declared_project_urls": [
+        "Homepage, https://github.com/facelessuser/soupsieve"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "sympy",
+      "version": "1.14.0",
+      "declared_project_urls": [
+        "Source, https://github.com/sympy/sympy"
+      ],
+      "declared_home_page": "https://sympy.org"
+    },
+    {
+      "name": "torch",
+      "version": "2.15.0",
+      "declared_project_urls": [
+        "Homepage, https://pytorch.org",
+        "Repository, https://github.com/pytorch/pytorch",
+        "Documentation, https://pytorch.org/docs",
+        "Issue Tracker, https://github.com/pytorch/pytorch/issues",
+        "Forum, https://discuss.pytorch.org"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "torchvision",
+      "version": "0.29.2",
+      "declared_project_urls": [],
+      "declared_home_page": "https://github.com/pytorch/vision"
+    },
+    {
+      "name": "tqdm",
+      "version": "4.70.1",
+      "declared_project_urls": [
+        "homepage, https://tqdm.github.io",
+        "repository, https://github.com/tqdm/tqdm",
+        "changelog, https://tqdm.github.io/releases",
+        "wiki, https://github.com/tqdm/tqdm/wiki"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "typing_extensions",
+      "version": "4.16.0",
+      "declared_project_urls": [
+        "Bug Tracker, https://github.com/python/typing_extensions/issues",
+        "Changes, https://github.com/python/typing_extensions/blob/main/CHANGELOG.md",
+        "Documentation, https://typing-extensions.readthedocs.io/",
+        "Home, https://github.com/python/typing_extensions",
+        "Q & A, https://github.com/python/typing/discussions",
+        "Repository, https://github.com/python/typing_extensions"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "tzdata",
+      "version": "2026.6",
+      "declared_project_urls": [
+        "Bug Reports, https://github.com/python/tzdata/issues",
+        "Source, https://github.com/python/tzdata",
+        "Documentation, https://tzdata.python.org"
+      ],
+      "declared_home_page": "https://github.com/python/tzdata"
+    },
+    {
+      "name": "ultralytics",
+      "version": "8.4.192",
+      "declared_project_urls": [
+        "Homepage, https://ultralytics.com",
+        "Source, https://github.com/ultralytics/ultralytics",
+        "Documentation, https://docs.ultralytics.com",
+        "Bug Reports, https://github.com/ultralytics/ultralytics/issues",
+        "Changelog, https://github.com/ultralytics/ultralytics/releases"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "ultralytics-platform",
+      "version": "0.1.101",
+      "declared_project_urls": [
+        "Repository, https://github.com/ultralytics/sdk",
+        "Issues, https://github.com/ultralytics/sdk/issues"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "ultralytics-thop",
+      "version": "2.2.3",
+      "declared_project_urls": [
+        "Homepage, https://ultralytics.com",
+        "Source, https://github.com/ultralytics/thop",
+        "Documentation, https://docs.ultralytics.com",
+        "Bug Reports, https://github.com/ultralytics/thop/issues",
+        "Changelog, https://github.com/ultralytics/thop/releases"
+      ],
+      "declared_home_page": null
+    },
+    {
+      "name": "urllib3",
+      "version": "2.8.0",
+      "declared_project_urls": [
+        "Changelog, https://github.com/urllib3/urllib3/blob/main/CHANGES.rst",
+        "Documentation, https://urllib3.readthedocs.io",
+        "Code, https://github.com/urllib3/urllib3",
+        "Issue tracker, https://github.com/urllib3/urllib3/issues",
+        "Security policy, https://urllib3.readthedocs.io/en/latest/security.html"
+      ],
+      "declared_home_page": null
+    }
+  ]
+}

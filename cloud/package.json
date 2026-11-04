@@ -1,0 +1,16 @@
+{
+  "name": "touchline-studio-cloud-gateway",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "deploy": "wrangler pages deploy ../dist --project-name touchline-studio",
+    "dev": "wrangler pages dev ../dist"
+  },
+  "dependencies": {
+    "@aws-sdk/client-s3": "^3.922.0",
+    "@aws-sdk/s3-request-presigner": "^3.922.0"
+  },
+  "devDependencies": {
+    "wrangler": "^4.45.0"
+  }
+}

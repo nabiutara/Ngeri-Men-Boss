@@ -162,7 +162,7 @@ node tests/test_frame_review_ui.cjs
 
 ## Model documentation
 
-The integration is based on [nabiutara/football_analysis](https://github.com/nabiutara/football_analysis), [Ultralytics YOLO26](https://docs.ultralytics.com/models/yolo26/) and [Ultralytics tracking](https://docs.ultralytics.com/modes/track/). The Ultralytics dependency and model weights have their own licensing terms; see the [Ultralytics license](https://www.ultralytics.com/license).
+The integration is based on, [Ultralytics YOLO26](https://docs.ultralytics.com/models/yolo26/) and [Ultralytics tracking](https://docs.ultralytics.com/modes/track/). The Ultralytics dependency and model weights have their own licensing terms; see the [Ultralytics license](https://www.ultralytics.com/license).
 
 Startup failures are recorded in `work/server.log`. Reopening the launcher reuses a healthy local server. If another app occupies port 8765, the launcher reports that conflict without terminating it.
 

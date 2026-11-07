@@ -1,5 +1,17 @@
 # Touchline Studio
 
+**To open the app: double-click `Start Touchline.cmd` in this folder.**
+It starts the server and opens Touchline Studio in your browser. Keep its window
+open while using the app. This is the only CMD launcher in the project.
+
+The launcher uses the current files in this folder, so it does not need regenerating
+when the code changes. Close the running launcher and reopen it after updating the
+code. Git push uploads commits; updates from another computer require a pull first.
+
+The launcher checks that the server on port 8765 belongs to this folder. If it reports
+a different or older installation, close that copy's launcher first. HTML, JavaScript,
+and CSS are served fresh when you reload the page; Python changes require a restart.
+
 A local soccer-video analysis workspace with customizable player overlays, tactical drawings, formation boards, and your own interpretation notes.
 
 For frame labeling, shirt-color corrections, and local candidate training, follow
@@ -26,6 +38,7 @@ Physical pitch dimensions are not assumed. Tracking uses dimensionless coordinat
 Before adding real-world distances or speeds, ask the user for verified measurements.
 
 To rebuild the portable ZIP from this folder, run `python build_package.py`.
+The single output is `dist/touchline-studio.zip`; building is not needed to open the app.
 
 For a file-by-file explanation and code provenance, start with **SOURCE-GUIDE.md**.
 **CODE-MAP.md** indexes declarations and UI handlers; **DEPENDENCIES.json** lists
@@ -37,7 +50,8 @@ unverified working-tree changes.
 
 ## Open the app on Windows
 
-1. Extract this folder somewhere writable.
+1. Open this project folder (the one containing this README) or extract the portable
+   ZIP somewhere writable.
 2. Install Python 3.11–3.13 if needed; enable **Add Python to PATH**.
 3. Double-click **Start Touchline.cmd**. It reuses the installed workspace environment when available; otherwise first setup downloads the tracking packages. The browser opens only after the server responds.
 4. The workspace opens at **http://127.0.0.1:8765**. The launcher also prints a **Phone link (same Wi-Fi)**. On the phone, open that address while it is connected to the same Wi-Fi as the PC. The app footer's **Connect phone on Wi-Fi** button shows and copies the link. Keep the launcher window open; closing it stops the server. If Windows Firewall asks, allow Python on **Private networks only**.
@@ -46,7 +60,8 @@ unverified working-tree changes.
 The Windows launcher allows devices on your local Wi-Fi to reach the app. Phone and PC
 must stay on the same network and the PC must remain on. The server still runs on the
 PC; video processing and storage stay there. This does not publish the app to the
-public internet. Use **Open Touchline.cmd** for PC-only loopback mode.
+public internet. Advanced use: `python launch.py` starts PC-only loopback mode with
+an interpreter that has the dependencies installed.
 
 The optional cloud deployment is separate and sends video to Cloudflare R2 for
 temporary storage and a Modal GPU worker; raw clips are deleted after processing, while
@@ -166,7 +181,7 @@ The integration is based on, [Ultralytics YOLO26](https://docs.ultralytics.com/m
 
 Startup failures are recorded in `work/server.log`. Reopening the launcher reuses a healthy local server. If another app occupies port 8765, the launcher reports that conflict without terminating it.
 
-If the browser says **refused to connect**, start **Start Touchline.cmd** (or the adjacent **Open Touchline.cmd**) and wait for **Touchline Studio is ready**. A browser bookmark alone cannot start the local app. On the phone, use the exact **Phone link (same Wi-Fi)** printed by the launcher; the PC's address may change when the Wi-Fi reconnects. If the phone cannot connect, check that both devices use the same non-guest Wi-Fi and allow Python through Windows Firewall for private networks. If startup fails, the launcher stays open so you can read the error; its log is `work/server.log` inside the app folder.
+If the browser says **refused to connect**, start **Start Touchline.cmd** and wait for **Touchline Studio is ready**. A browser bookmark alone cannot start the local app. On the phone, use the exact **Phone link (same Wi-Fi)** printed by the launcher; the PC's address may change when the Wi-Fi reconnects. If the phone cannot connect, check that both devices use the same non-guest Wi-Fi and allow Python through Windows Firewall for private networks. If startup fails, the launcher stays open so you can read the error; its log is `work/server.log` inside the app folder.
 
 
 ## Custom player connections (asset version 3.1)
@@ -207,8 +222,10 @@ percentages of that player's detection box, not physical pitch measurements.
 Positive values move right/down; zero resets. These corrections move both the ring
 and custom connection endpoints and persist with the project.
 
-Playback now uses decoded-frame timestamps through requestVideoFrameCallback where
-available, with a playback-clock fallback if frame callbacks stop. During a seek the
+Playback uses the exact decoded-frame timestamp through requestVideoFrameCallback
+where available. Rings and connections are drawn with that frame, and stay at its
+timestamp between frames instead of advancing ahead of the displayed picture.
+A playback-clock fallback remains if frame callbacks stop. During a seek the
 previous canvas stays intact until the video is ready. Additional smoothing lag is
 limited to 8% of ring radius (previously 25%). This reduces presentation lag; it does
 not repair incorrect detector boxes or identity switches. No pose model was added,

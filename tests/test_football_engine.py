@@ -11,7 +11,9 @@ import cv2
 import numpy as np
 
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
-from football_engine import TeamColors, CameraMotion, BallHistory, bounded_ball_fill, jersey_color, role_for, track_football, distinct_people
+from football_engine import (TeamColors, CameraMotion, BallHistory, bounded_ball_fill,
+                             jersey_color, role_for, track_football, distinct_people,
+                             PlayerAppearanceEncoder)
 
 
 class FootballTests(unittest.TestCase):
@@ -239,5 +241,129 @@ class FootballTests(unittest.TestCase):
         accepted=balls2.choose([{'x':.36,'y':.2,'conf':.85}],.30,0)
         self.assertIsNotNone(accepted)
         self.assertEqual(accepted['x'],.36)
+
+    def test_player_appearance_encoder_discrimination(self):
+        encoder = PlayerAppearanceEncoder(mode='lightweight')
+        # Red player
+        p_red = np.full((120, 60, 3), (255, 255, 255), dtype=np.uint8)
+        p_red[20:70, :] = (20, 20, 220)
+        # Same red player slightly perturbed
+        p_red_pert = np.full((120, 60, 3), (255, 255, 255), dtype=np.uint8)
+        p_red_pert[20:70, :] = (22, 25, 215)
+        # Blue player
+        p_blue = np.full((120, 60, 3), (220, 50, 20), dtype=np.uint8)
+        p_blue[20:70, :] = (210, 35, 15)
+
+        feat_red = encoder.extract_patch_feature(p_red)
+        feat_red_pert = encoder.extract_patch_feature(p_red_pert)
+        feat_blue = encoder.extract_patch_feature(p_blue)
+
+        self.assertIsNotNone(feat_red)
+        self.assertIsNotNone(feat_red_pert)
+        self.assertIsNotNone(feat_blue)
+
+        # Normalized L2 norm
+        self.assertAlmostEqual(float(np.linalg.norm(feat_red)), 1.0, places=4)
+        self.assertAlmostEqual(float(np.linalg.norm(feat_blue)), 1.0, places=4)
+
+        dist_same = 1.0 - float(np.dot(feat_red, feat_red_pert))
+        dist_diff = 1.0 - float(np.dot(feat_red, feat_blue))
+
+        # Same player cosine distance should be negligible (< 0.05)
+        self.assertLess(dist_same, 0.05)
+        # Different kit colors cosine distance should be high (> 0.5)
+        self.assertGreater(dist_diff, 0.5)
+
+    def test_player_appearance_encoder_edge_cases(self):
+        encoder = PlayerAppearanceEncoder(mode='lightweight')
+        # Empty / tiny crop
+        self.assertIsNone(encoder.extract_patch_feature(np.zeros((2, 2, 3), dtype=np.uint8)))
+        self.assertIsNone(encoder.extract_patch_feature(None))
+
+        # Out of bounds / invalid boxes via __call__
+        frame = np.zeros((100, 100, 3), dtype=np.uint8)
+        bboxes = np.array([
+            [50, 50, 20, 40, 0],   # Valid
+            [0, 0, 0, 0, 1],       # 0-size
+            [200, 200, 20, 20, 2], # Out of bounds
+        ], dtype=np.float32)
+        feats = encoder(frame, bboxes)
+        self.assertEqual(len(feats), 3)
+        self.assertIsNotNone(feats[0])
+        self.assertIsNone(feats[1])
+        self.assertIsNone(feats[2])
+
+        # None image
+        self.assertEqual(encoder(None, bboxes), [None, None, None])
+
+    def test_track_football_reid_metadata(self):
+        from ultralytics.engine.results import Results
+        rng = np.random.default_rng(77)
+        texture = rng.integers(0, 255, (240, 320, 3), dtype=np.uint8)
+        images = [texture.copy() for _ in range(3)]
+        class FakeModel:
+            names = {0: 'player'}
+            def predict(self, *args, **kwargs):
+                for img in images:
+                    boxes = [[50, 50, 80, 130, .9, 0]]
+                    yield Results(img, 'synthetic', self.names, boxes=np.array(boxes, np.float32))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); video = root / 'clip.avi'; out = root / 'tracks.json'
+            writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*'MJPG'), 10, (320, 240))
+            for img in images: writer.write(img)
+            writer.release()
+
+            with patch('ultralytics.YOLO', return_value=FakeModel()):
+                track_football(video, out, models_dir=root, model_name='yolo26n.pt', tracker_name='botsort', with_reid=True)
+            data = json.loads(out.read_text())
+            self.assertTrue(data['reid_enabled'])
+            self.assertEqual(data['reid_method'], 'lightweight')
+            self.assertEqual(data['association_space'], 'image-with-botsort-gmc-reid')
+
+    def test_botsort_reid_crossing_stability(self):
+        from types import SimpleNamespace
+        from ultralytics.trackers.bot_sort import BOTSORT
+        from ultralytics.engine.results import Boxes
+
+        cfg = SimpleNamespace(track_high_thresh=0.25, track_low_thresh=0.1,
+                              new_track_thresh=0.25, track_buffer=30,
+                              match_thresh=0.8, fuse_score=False, gmc_method='sparseOptFlow',
+                              proximity_thresh=0.25, appearance_thresh=0.75,
+                              with_reid=False, model='auto')
+        tracker = BOTSORT(cfg)
+        tracker.args.with_reid = True
+        tracker.args.model = 'custom'
+        tracker.encoder = PlayerAppearanceEncoder(mode='lightweight')
+
+        # Red player moves right (100 -> 150), Blue player moves left (160 -> 110)
+        positions = [
+            [(100, [20, 20, 220]), (160, [220, 30, 20])],
+            [(105, [20, 20, 220]), (155, [220, 30, 20])],
+            [(110, [20, 20, 220]), (150, [220, 30, 20])],
+            [(120, [20, 20, 220]), (140, [220, 30, 20])],
+            [(130, [20, 20, 220]), (130, [220, 30, 20])], # Overlap / cross
+            [(140, [20, 20, 220]), (120, [220, 30, 20])],
+            [(150, [20, 20, 220]), (110, [220, 30, 20])],
+        ]
+        track_hist = []
+        for frame_data in positions:
+            img = np.zeros((300, 300, 3), dtype=np.uint8)
+            people = []
+            for x, color in frame_data:
+                img[40:140, x-15:x+15] = color
+                people.append([x-15, 40, x+15, 140, 0.9, 0])
+            dets = Boxes(np.array(people, dtype=np.float32), (300, 300))
+            res = tracker.update(dets, img)
+            track_hist.append({int(r[4]): float(r[0]) for r in res if len(r) >= 5})
+
+        # By final frame, both initial tracks must exist and maintain their distinct directions
+        initial_ids = set(track_hist[1].keys())
+        final_ids = set(track_hist[-1].keys())
+        self.assertEqual(initial_ids, final_ids)
+
+        # Track that started at left (<120) should now be at right (>125)
+        id_started_left = [tid for tid, x in track_hist[0].items() if x < 120][0]
+        self.assertGreater(track_hist[-1][id_started_left], 125)
 
 if __name__=='__main__':unittest.main()

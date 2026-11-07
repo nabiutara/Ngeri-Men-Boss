@@ -3,7 +3,8 @@ setlocal
 cd /d "%~dp0"
 if errorlevel 1 exit /b 1
 title Touchline Studio
-rem The launcher must stay with the extracted application, not be copied alone.
+rem The single app entry point: always run the current source beside this file.
+rem Keep this launcher with the application, not copied on its own.
 for %%F in (requirements.txt launch.py server.py football_engine.py training_workflow.py dist\index.html) do (
   if not exist "%%F" goto incomplete_package
 )
@@ -16,7 +17,9 @@ set "SETUP_LOG=%~dp0work\setup.log"
 >"%SETUP_LOG%" echo Touchline dependency check and setup
 echo.
 echo  TOUCHLINE STUDIO
-echo  Your match. Your perspective.
+echo  Starting the app. Your browser opens when it is ready.
+echo  Keep this window open while using Touchline Studio.
+echo  Project folder: %~dp0
 echo.
 if exist "..\..\work\yolo-env\Scripts\python.exe" (
   "..\..\work\yolo-env\Scripts\python.exe" -c "import ultralytics, lap, gdown" >>"%SETUP_LOG%" 2>&1
@@ -49,12 +52,13 @@ if errorlevel 1 (
 ".venv\Scripts\python.exe" -c "import ultralytics, lap, gdown" >>"%SETUP_LOG%" 2>&1
 if errorlevel 1 goto setup_error
 ".venv\Scripts\python.exe" launch.py --lan %*
-if errorlevel 1 pause
-exit /b
+goto launch_finished
 :workspace_ready
 "..\..\work\yolo-env\Scripts\python.exe" launch.py --lan %*
-if errorlevel 1 pause
-exit /b
+:launch_finished
+set "TOUCHLINE_EXIT_CODE=%ERRORLEVEL%"
+if not "%TOUCHLINE_EXIT_CODE%"=="0" pause
+exit /b %TOUCHLINE_EXIT_CODE%
 :setup_error
 echo.
 echo Setup did not finish. The actual Python or installation error follows:

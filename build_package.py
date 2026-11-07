@@ -1,11 +1,10 @@
 """Build the portable app without Git history, model binaries, or runtime data."""
 from pathlib import Path
 from zipfile import ZipFile, ZIP_DEFLATED
-import shutil
 import os
 
 ROOT = Path(__file__).resolve().parent
-ARCHIVE = Path(os.environ.get('TOUCHLINE_PACKAGE_OUTPUT', ROOT.parent / 'touchline-studio.zip'))
+ARCHIVE = Path(os.environ.get('TOUCHLINE_PACKAGE_OUTPUT', ROOT / 'dist/touchline-studio.zip'))
 FILES = ['server.py', 'football_engine.py', 'requirements.txt', 'Start Touchline.cmd',
          'README.md', 'REPOSITORY-ANALYSIS.md', 'MODEL-PROVENANCE.json', 'AGENTS.md',
          'build_package.py', '.gitignore', 'dist/index.html', 'dist/app.js',
@@ -16,7 +15,7 @@ FILES += ['PYCHARM-SETUP.md']
 FILES += ['REVIEW.md', 'tests/test_video_import.cjs']
 FILES += ['dist/foot-markers.js', 'tests/test_foot_markers.cjs']
 FILES += ['launch.py']
-FILES += ['tests/test_launch.py']
+FILES += ['tests/test_launch.py', 'tests/test_server_assets.py']
 FILES += ['benchmark.py', 'evaluation.py', 'prepare_training.py', 'EVALUATION.md',
           'tests/test_evaluation.py', 'tests/test_training_export.py']
 FILES += ['dist/player-connections.js', 'tests/test_player_connections.cjs']
@@ -26,8 +25,13 @@ FILES += ['training_workflow.py', 'FRAME-LABELING.md', 'dist/frame-review.js',
           'dist/frame-review-ui.js', 'tests/test_frame_review.cjs',
           'tests/test_training_workflow.py', 'tests/test_training_api.py',
           'tests/test_frame_review_ui.cjs']
+FILES += ['cloud/pseudo_training.py', 'cloud/modal_app.py', 'cloud/requirements.txt',
+          'cloud/package.json', 'cloud/DEPLOY.md', 'cloud/schema.sql',
+          'cloud/functions/api/[[path]].js', 'cloud/migrations/0001_create_jobs.sql',
+          'tests/test_cloud_client.cjs', 'tests/test_cloud_pseudo_training.py']
 
 def main():
+    ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
     with ZipFile(ARCHIVE, 'w', ZIP_DEFLATED) as archive:
         for file in FILES:
             archive.write(ROOT / file, 'Touchline Studio/' + file)
@@ -35,8 +39,8 @@ def main():
         assert archive.testzip() is None
         assert len(archive.namelist()) == len(FILES)
         assert all('.git' not in Path(name).parts for name in archive.namelist())
-    shutil.copy2(ARCHIVE, ROOT / 'dist/touchline-studio.zip')
     print(f'Packaged {len(FILES)} standalone application files ({ARCHIVE.stat().st_size:,} bytes).')
+    print(f'Package: {ARCHIVE.resolve()}')
 
 if __name__ == '__main__':
     main()

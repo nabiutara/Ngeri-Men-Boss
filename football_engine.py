@@ -297,9 +297,104 @@ def bounded_ball_fill(buffer):
     buffer[0]['ball'].update(conf=min(a['conf'],b['conf']),observed=False)
 
 
+class PlayerAppearanceEncoder:
+    """Multi-zone spatial appearance encoder for player ReID in BoT-SORT.
+
+    Extracts normalized visual appearance descriptors representing the upper torso (kit/jersey),
+    mid-body (shorts), and full-body color distributions in perceptually uniform Lab and HSV
+    spaces. Resolves player identity switches during occlusions and tackles without external
+    network calls or heavyweight ReID model downloads.
+    """
+    def __init__(self, mode: str = "lightweight", model_path: str | Path | None = None, device: str | None = None):
+        self.mode = mode
+        self.device = device
+        self._model = None
+        if mode == "model" and model_path:
+            try:
+                from ultralytics.trackers.utils.reid import ReID
+                self._model = ReID(str(model_path), device=device)
+            except Exception:
+                self._model = None
+                self.mode = "lightweight"
+
+    def extract_patch_feature(self, patch: np.ndarray) -> np.ndarray | None:
+        if patch is None or patch.size < 16 or patch.shape[0] < 4 or patch.shape[1] < 4:
+            return None
+        resized = cv2.resize(patch, (32, 64), interpolation=cv2.INTER_AREA)
+        hsv = cv2.cvtColor(resized, cv2.COLOR_BGR2HSV)
+        lab = cv2.cvtColor(resized, cv2.COLOR_BGR2LAB)
+
+        torso_hsv = hsv[10:35, 5:27]
+        torso_lab = lab[10:35, 5:27]
+        shorts_hsv = hsv[35:51, 5:27]
+        shorts_lab = lab[35:51, 5:27]
+
+        h_hist = cv2.calcHist([torso_hsv], [0], None, [16], [0, 180]).flatten()
+        s_hist = cv2.calcHist([torso_hsv], [1], None, [8], [0, 256]).flatten()
+        l_hist = cv2.calcHist([torso_lab], [0], None, [8], [0, 256]).flatten()
+        a_hist = cv2.calcHist([torso_lab], [1], None, [8], [0, 256]).flatten()
+        b_hist = cv2.calcHist([torso_lab], [2], None, [8], [0, 256]).flatten()
+        torso_mean = torso_lab.mean(axis=(0, 1)) / 255.0
+        torso_std = torso_lab.std(axis=(0, 1)) / 128.0
+
+        s_h_hist = cv2.calcHist([shorts_hsv], [0], None, [8], [0, 180]).flatten()
+        s_s_hist = cv2.calcHist([shorts_hsv], [1], None, [4], [0, 256]).flatten()
+        s_l_hist = cv2.calcHist([shorts_lab], [0], None, [8], [0, 256]).flatten()
+        s_a_hist = cv2.calcHist([shorts_lab], [1], None, [8], [0, 256]).flatten()
+        s_b_hist = cv2.calcHist([shorts_lab], [2], None, [8], [0, 256]).flatten()
+        shorts_mean = shorts_lab.mean(axis=(0, 1)) / 255.0
+
+        full_h_hist = cv2.calcHist([hsv], [0], None, [8], [0, 180]).flatten()
+        full_s_hist = cv2.calcHist([hsv], [1], None, [8], [0, 256]).flatten()
+        full_l_hist = cv2.calcHist([lab], [0], None, [8], [0, 256]).flatten()
+
+        feats = np.concatenate([
+            h_hist / (h_hist.sum() + 1e-6),
+            s_hist / (s_hist.sum() + 1e-6),
+            l_hist / (l_hist.sum() + 1e-6),
+            a_hist / (a_hist.sum() + 1e-6),
+            b_hist / (b_hist.sum() + 1e-6),
+            torso_mean, torso_std,
+            s_h_hist / (s_h_hist.sum() + 1e-6),
+            s_s_hist / (s_s_hist.sum() + 1e-6),
+            s_l_hist / (s_l_hist.sum() + 1e-6),
+            s_a_hist / (s_a_hist.sum() + 1e-6),
+            s_b_hist / (s_b_hist.sum() + 1e-6),
+            shorts_mean,
+            full_h_hist / (full_h_hist.sum() + 1e-6),
+            full_s_hist / (full_s_hist.sum() + 1e-6),
+            full_l_hist / (full_l_hist.sum() + 1e-6),
+        ]).astype(np.float32)
+        norm = np.linalg.norm(feats)
+        return feats / norm if norm > 1e-12 else None
+
+    def __call__(self, img: np.ndarray, bboxes: np.ndarray) -> list[np.ndarray | None]:
+        if self._model is not None:
+            try:
+                return self._model(img, bboxes)
+            except Exception:
+                pass
+        if img is None or len(bboxes) == 0:
+            return [None] * len(bboxes)
+        h_img, w_img = img.shape[:2]
+        features = []
+        for bbox in bboxes:
+            cx, cy, bw, bh = bbox[:4]
+            x1 = max(0, int(round(cx - bw / 2)))
+            y1 = max(0, int(round(cy - bh / 2)))
+            x2 = min(w_img, int(round(cx + bw / 2)))
+            y2 = min(h_img, int(round(cy + bh / 2)))
+            if x2 <= x1 or y2 <= y1:
+                features.append(None)
+                continue
+            crop = img[y1:y2, x1:x2]
+            features.append(self.extract_patch_feature(crop))
+        return features
+
+
 def track_football(source, output, *, models_dir, model_name="football-best.pt", confidence=.1,
-                   stride=1, tracker_name="botsort", imgsz=960, source_name=None,
-                   progress=None, cancel=None, reviewed_palette=None, source_sha256=None):
+                   stride=1, tracker_name="botsort", with_reid=True, reid_mode="lightweight",
+                   imgsz=960, source_name=None, progress=None, cancel=None, reviewed_palette=None, source_sha256=None):
     import torch
     os.environ["ULTRALYTICS_SAFE_LOAD"]="1"
     from ultralytics import YOLO
@@ -334,16 +429,25 @@ def track_football(source, output, *, models_dir, model_name="football-best.pt",
     if not any(v in {'player','goalkeeper'} for v in class_roles.values()):
         raise ValueError('This checkpoint has no player/person classes')
     device=0 if torch.cuda.is_available() else 'cpu'
+    reid_active=bool(tracker_name=='botsort' and with_reid)
     cfg=SimpleNamespace(track_high_thresh=max(.25,confidence),track_low_thresh=.1,
                         new_track_thresh=max(.25,confidence),track_buffer=max(5,round(fps/stride)),
                         match_thresh=.8,fuse_score=False,gmc_method='sparseOptFlow',
-                        proximity_thresh=.5,appearance_thresh=.8,with_reid=False,model='auto')
+                        proximity_thresh=.25 if reid_active else .5,appearance_thresh=.75,
+                        with_reid=False,model='auto')
     tracker=(BYTETracker if tracker_name=='bytetrack' else BOTSORT)(cfg)
+    if reid_active:
+        if hasattr(tracker, 'args'):
+            tracker.args.with_reid=True
+            tracker.args.model='custom'
+        tracker.encoder=PlayerAppearanceEncoder(mode=reid_mode,model_path=path if reid_mode=='model' else None,device=device)
     camera=CameraMotion();teams=TeamColors();balls=BallHistory();ids={};next_id=1;processed=0;cuts=0
     metadata={'schema':'touchline-tracks-v1','engine_version':3,'source_name':source_name or source.name,
               'fps':fps,'stride':stride,'width':width,'height':height,'duration':count/fps,
-              'model':model_name,'tracker':tracker_name,'imgsz':imgsz,'device':str(device),
-              'association_space':'image-with-botsort-gmc' if tracker_name=='botsort' else 'image',
+              'model':model_name,'tracker':tracker_name,'reid_enabled':reid_active,
+              'reid_method':(reid_mode if reid_active else None),
+              'imgsz':imgsz,'device':str(device),
+              'association_space':'image-with-botsort-gmc-reid' if reid_active else ('image-with-botsort-gmc' if tracker_name=='botsort' else 'image'),
               'person_duplicate_iou':.7,'score_fusion':False,
               'class_names':model.names,'coordinate_system':'normalized-bottom-center',
               'reference_repository':'nabiutara/football_analysis','reference_commit':REPO_REVISION}

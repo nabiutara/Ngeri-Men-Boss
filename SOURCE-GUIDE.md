@@ -67,9 +67,9 @@ itself is the authoritative description of behavior; line numbers change after e
 | `.idea/` | Local PyCharm project settings. IDE-specific machine state stays outside the portable package and Git. |
 | `SOURCE-GUIDE.md`, `CODE-MAP.md`, `DEPENDENCIES.json` | This explanatory guide, the source navigation index, and the installed dependency inventory. |
 
-The adjacent `outputs/Open Touchline.cmd` is a convenience launcher for this workspace.
-It uses the already-installed environment in the outer `work/yolo-env` folder and
-falls back to the packaged launcher. It is not part of the portable app's runtime API.
+`Start Touchline.cmd` in the project root is the single Windows app launcher.
+It uses the installed environment in the outer `work/yolo-env` folder when available,
+or sets up a local environment, then opens the current app in the browser.
 
 ## Main analysis flow
 
@@ -147,10 +147,10 @@ Third-party library implementations can be inspected under PyCharm's External Li
 
 See PYCHARM-SETUP.md for the one-time interpreter selection. IDE launch and interpreter
 registration still need confirmation in PyCharm; preparing XML does not verify them.
-The adjacent **Open Touchline in PyCharm.cmd** launcher opens the installed IDE with
-this project folder. Workspace-specific `.run/` and `.idea/` files are not in the ZIP.
+Open this project folder directly in PyCharm to edit the code.
+Workspace-specific `.run/` and `.idea/` files are not in the ZIP.
 
-`launch.py` checks local server identity, detects port conflicts, starts the server with a persistent log, and opens the browser only after readiness. The Windows **Start Touchline.cmd** launcher enables same-Wi-Fi access and prints the phone link; **Open Touchline.cmd** stays loopback-only. `tests/test_launch.py` verifies reuse, conflict handling, and failed-child behavior.
+`launch.py` checks local server identity, detects port conflicts, starts the server with a persistent log, and opens the browser only after readiness. The Windows **Start Touchline.cmd** launcher enables same-Wi-Fi access and prints the phone link. `tests/test_launch.py` verifies reuse, conflict handling, and failed-child behavior.
 
 
 ## Overlay, labels, and connections

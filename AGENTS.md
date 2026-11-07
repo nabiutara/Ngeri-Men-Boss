@@ -22,3 +22,8 @@ Run the Python regression suite and JavaScript projection tests after pipeline
 changes. Use `python build_package.py` to refresh the distributable ZIP after edits.
 Exclude Git metadata, environments, runtime data, credentials, and reference clones
 from the package. Keep the app local unless the user explicitly requests publishing.
+
+Keep `Start Touchline.cmd` as the single Windows app launcher in the project root.
+It must open the current app directly. Do not add folder-opening or package-building
+launchers, or extract a duplicate app tree into this repository. The package builder
+defaults to `dist/touchline-studio.zip`; startup does not require a package build.

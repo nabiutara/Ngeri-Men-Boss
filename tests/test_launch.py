@@ -52,15 +52,25 @@ class LauncherTests(unittest.TestCase):
     def test_ready_server_is_supervised_until_it_exits(self):
         probe=MagicMock();probe.__enter__.return_value.connect_ex.return_value=1
         process=MagicMock();process.poll.return_value=None;process.wait.return_value=7
-        with tempfile.TemporaryDirectory() as directory, patch.object(launch,'ROOT',Path(directory)), patch.object(sys,'argv',['launch.py','--no-browser']), patch.object(launch,'health',side_effect=[None,{'app':'touchline-studio'}]), patch.object(launch.socket,'socket',return_value=probe), patch.object(launch.subprocess,'Popen',return_value=process) as spawn:
+        with tempfile.TemporaryDirectory() as directory, patch.object(launch,'ROOT',Path(directory)), patch.object(sys,'argv',['launch.py','--no-browser']), patch.object(launch,'health',side_effect=[None,{'app':'touchline-studio','project_id':launch.project_identity(directory)}]), patch.object(launch.socket,'socket',return_value=probe), patch.object(launch.subprocess,'Popen',return_value=process) as spawn:
             self.assertEqual(launch.main(),7)
             process.wait.assert_called_once()
             self.assertNotIn('creationflags',spawn.call_args.kwargs)
 
     def test_existing_server_is_reused(self):
-        with patch.object(sys,'argv',['launch.py','--no-browser']), patch.object(launch,'health',return_value={'app':'touchline-studio'}), patch.object(launch.subprocess,'Popen') as spawn:
+        with patch.object(sys,'argv',['launch.py','--no-browser']), patch.object(launch,'health',return_value={'app':'touchline-studio','project_id':launch.project_identity(launch.ROOT)}), patch.object(launch.subprocess,'Popen') as spawn:
             self.assertEqual(launch.main(),0)
             spawn.assert_not_called()
+
+    def test_other_copy_or_legacy_server_never_opens_wrong_app(self):
+        for identity in (None, launch.project_identity(launch.ROOT / 'old-copy')):
+            with self.subTest(identity=identity):
+                output = io.StringIO()
+                with patch.object(sys,'argv',['launch.py']), patch.object(launch,'health',return_value={'app':'touchline-studio','project_id':identity}), patch.object(launch.subprocess,'Popen') as spawn, patch.object(launch.webbrowser,'open') as browser, redirect_stdout(output):
+                    self.assertEqual(launch.main(),1)
+                    spawn.assert_not_called()
+                    browser.assert_not_called()
+                self.assertIn('different or older Touchline installation',output.getvalue())
 
     def test_foreign_port_is_not_killed_or_replaced(self):
         probe=MagicMock();probe.__enter__.return_value.connect_ex.return_value=0

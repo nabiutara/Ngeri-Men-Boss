@@ -220,7 +220,7 @@ async function startAnalysis(){
  setPlaying(false);const generation=++jobGeneration;jobId='uploading';$('analysisProgress').hidden=false;$('progress').value=0;
  $('progressText').textContent=cloudEngine?'Preparing private cloud upload…':'Sending video to local runner…';updateEngineStatus();
  try{
-  const settings={model_name:$('modelChoice').value,confidence:Number($('confidence').value),stride:Number($('frameStride').value),tracker_name:$('trackerChoice').value,imgsz:Number($('imageSize').value)};
+  const settings={model_name:$('modelChoice').value,confidence:Number($('confidence').value),stride:Number($('frameStride').value),tracker_name:$('trackerChoice').value,with_reid:$('enableReID')?Boolean($('enableReID').checked):true,imgsz:Number($('imageSize').value)};
   if(cloudEngine){
    if(settings.model_name!=='football-best.pt')throw Error('Cloud candidate training currently requires the specialized football model.');
    if(clipFile.size>2*1024**3)throw Error('Cloud uploads must be smaller than 2 GB.');
@@ -247,7 +247,7 @@ async function startAnalysis(){
    const queued=await started.json();if(!started.ok)throw Error(queued.error||'Could not queue the cloud job');
    uploadController=null;pollAnalysis(generation);return;
   }
-  const params=new URLSearchParams({filename:clipFile.name,model:settings.model_name,conf:String(settings.confidence),stride:String(settings.stride),tracker:settings.tracker_name,imgsz:String(settings.imgsz)});
+  const params=new URLSearchParams({filename:clipFile.name,model:settings.model_name,conf:String(settings.confidence),stride:String(settings.stride),tracker:settings.tracker_name,reid:settings.with_reid?'1':'0',imgsz:String(settings.imgsz)});
   const r=await fetch('/api/jobs?'+params,{method:'POST',headers:{'Content-Type':'application/octet-stream','X-Touchline-Client':'studio'},body:clipFile});
   const data=await r.json();if(!r.ok)throw Error(data.error||'Could not start analysis');jobId=data.id;
   if(generation!==jobGeneration){await fetch('/api/jobs/'+data.id,{method:'DELETE',headers:{'X-Touchline-Client':'studio'}});jobId=null;updateEngineStatus();return;}
@@ -282,11 +282,11 @@ async function restore(){try{const saved=localStorage.getItem(storageKey);if(sav
 // Follow the decoded video frame, rather than the audio/playback clock between frames.
 let lastPresentedAt=-Infinity,lastPresentedMediaTime=0;
 if(video.requestVideoFrameCallback){
- const onVideoFrame=(now,metadata)=>{lastPresentedAt=now;lastPresentedMediaTime=metadata.mediaTime;if(!state.demo&&!needsRelink&&!playing){time=metadata.mediaTime;updateTime();}video.requestVideoFrameCallback(onVideoFrame);};
+ const onVideoFrame=(now,metadata)=>{lastPresentedAt=now;lastPresentedMediaTime=metadata.mediaTime;if(!state.demo&&!needsRelink){time=metadata.mediaTime;updateTime();render();}video.requestVideoFrameCallback(onVideoFrame);};
  video.addEventListener('seeking',()=>{lastPresentedAt=-Infinity;if(!state.demo&&!needsRelink){time=video.currentTime;updateTime();}});
  video.requestVideoFrameCallback(onVideoFrame);
 }
-function mediaTimeAt(now){if(!video.requestVideoFrameCallback||now-lastPresentedAt>250||now<lastPresentedAt)return video.currentTime;return Math.min(video.duration||duration,Math.max(0,lastPresentedMediaTime+Math.max(0,now-lastPresentedAt)/1000*(video.playbackRate||1)));}
+function mediaTimeAt(now){if(!video.requestVideoFrameCallback||now-lastPresentedAt>250||now<lastPresentedAt)return video.currentTime;return lastPresentedMediaTime;}
 let connectionFrom=null;
 let connectionFromScene=null;
 function connectPlayer(id){
@@ -348,8 +348,9 @@ $('connectSelected').onclick=()=>{if(selected?.type!=='player'){toast('Choose a 
 $('connectionMode').onchange=()=>{connectionFrom=null;};
 $('connectClear').onclick=()=>{checkpoint();state.connections=[];connectionFrom=null;autosave();toast('Custom connections cleared. Undo can restore them.');};
 
-function tick(stamp){const dt=Math.min((stamp-lastFrame)/1000,.1);lastFrame=stamp;if(playing){if(state.demo){time+=dt*+$('playbackSpeed').value;if(time>=duration){time=duration;setPlaying(false);}}else time=mediaTimeAt(stamp);updateTime();}render();requestAnimationFrame(tick);}
-FrameReviewUI.mount({button:$('reviewFramesButton'),context:()=>{if(jobId||recording)throw Error('Finish analysis or recording before reviewing labels');if(state.demo||!clipFile||needsRelink)throw Error('Import or re-link the original match video first');return {file:clipFile,time:video.currentTime,frames};},pause:()=>setPlaying(false),trackInfo:id=>{const p=playersAt(time).find(p=>p.id===id)||{id};return playerInfo(p);},correctTrack:(id,patch)=>{checkpoint();Object.assign(playerEdit({id}),patch);updateSelection();autosave();},download,toast});
+function tick(stamp){const dt=Math.min((stamp-lastFrame)/1000,.1);lastFrame=stamp;if(playing){if(state.demo){time+=dt*+$('playbackSpeed').value;if(time>=duration){time=duration;setPlaying(false);}}else time=mediaTimeAt(stamp);updateTime();}const frameDriven=playing&&!state.demo&&!needsRelink&&video.requestVideoFrameCallback&&stamp>=lastPresentedAt&&stamp-lastPresentedAt<=250;if(!frameDriven)render();requestAnimationFrame(tick);}
+FrameReviewUI.mount({button:$('reviewFramesButton'),context:()=>{if(jobId||recording)throw Error('Finish analysis or recording before reviewing labels');if(state.demo||!clipFile||needsRelink)throw Error('Import or re-link the original match video first');return {file:clipFile,time:video.currentTime,frames,fps:trackMeta?.fps};},pause:()=>setPlaying(false),trackInfo:id=>{const p=playersAt(time).find(p=>p.id===id)||{id};return playerInfo(p);},correctTrack:(id,patch)=>{checkpoint();Object.assign(playerEdit({id}),patch);updateSelection();autosave();},download,toast});
+if($('trackerChoice'))$('trackerChoice').addEventListener('change',()=>{if($('reidOption'))$('reidOption').style.display=$('trackerChoice').value==='botsort'?'':'none';});
 bindFootballControls();restore();checkEngine();requestAnimationFrame(tick);
 
 

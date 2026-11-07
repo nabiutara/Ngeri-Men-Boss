@@ -16,12 +16,18 @@ reviewing a video does not automatically replace the active model.
 4. The editor identifies the video by SHA-256. Its incremental hash works over
    local Wi-Fi HTTP without requiring the browser's secure-context crypto APIs.
 
-With tracking results, the editor opens the nearest exact processed timestamp.
-**Previous sample** and **Next sample** follow those timestamps. All tracked person
-proposals are included, even tracks hidden by display filters. Interpolated ball
-positions are excluded. Without tracking, position the main video playhead and use
-**Capture playhead**. Browser video seeking still depends on the source codec;
-inspect the displayed frame before confirming its labels.
+The editor opens at the playhead. **Previous frame** and **Next frame** navigate
+using **Navigation FPS**, initialized from the tracking results when available.
+Without results, set it to the video's frame rate (the initial value is 30).
+**Time (seconds)** and **Go to time** let you choose any position without analysis.
+**Capture playhead** uses the main video's current time without snapping elsewhere.
+Frame navigation is nominal; variable-frame-rate sources and browser seeking can
+be approximate. Inspect the displayed image before confirming its labels.
+
+**Previous analyzed sample** and **Next analyzed sample** still follow the detector's
+processed timestamps. Proposals are loaded only at their matching timestamp, never
+silently copied onto a different frame. They include filtered and excluded tracks;
+interpolated ball positions are excluded.
 
 ## 2. Label the complete image
 
@@ -31,7 +37,8 @@ and validation, and reserve test matches for a later final assessment.
 
 - Select a box from the image or object list. Drag the box to move it; drag a selected
   corner to resize it. The numeric edge fields use percent of the source image.
-- Use **Draw missing object** to add missed players or the ball. Draw tight, full-body
+- Choose **New object role** and **New object team**, then use **Add missing object**
+  (N) to add missed players or the ball. Draw tight, full-body
   boxes for people. Label every visible target belonging to the four supported roles, across both
   teams. Staff and spectators are background, not players. Remove detections on
   these non-target people, false objects, and duplicate body parts.
@@ -45,7 +52,17 @@ and validation, and reserve test matches for a later final assessment.
 - **Pick color from shirt** samples a small pixel neighborhood at the point you tap.
   Choose a clear shirt patch, then inspect the enlarged player crop. A sample from
   grass, skin, a sponsor, or a shadow can be wrong even when a box is correct.
-- **Undo frame edit** restores the previous frame edit, but requires review again.
+- **Delete false box from labels** removes only the selected frame's object.
+  **Clear all boxes in this frame** starts that frame over after confirmation.
+- **Undo** and **Redo** restore edits within the current frame. Both require review
+  again. Keyboard shortcuts: Ctrl+Z, Ctrl+Y, or Ctrl+Shift+Z.
+- **Copy previous frame labels** copies the nearest earlier labeled frame as a draft.
+  It replaces the current boxes after confirmation when necessary. Adjust every box
+  to the new image and recheck person IDs after cuts. The previous frame is unchanged;
+  copied labels cannot apply edits to unrelated detector tracks.
+- Arrow keys move the selected box by one source pixel; Shift moves ten pixels.
+  Delete removes a selected box, V selects/moves, and comma/period step frames.
+  Shortcuts do not interfere with typing in form fields.
 
 Check the complete-frame confirmation only after adding missed objects and removing
 false ones. Then choose **Confirm & save reviewed frame**. A genuinely empty image

@@ -1,7 +1,9 @@
 """Start or reuse the local app and keep its server attached to this launcher."""
 from pathlib import Path
 import argparse
+import hashlib
 import json
+import os
 import socket
 import subprocess
 import sys
@@ -12,6 +14,15 @@ import webbrowser
 
 ROOT = Path(__file__).resolve().parent
 URL = 'http://127.0.0.1:8765'
+
+
+def project_identity(root):
+    """Identify the source folder without exposing its filesystem path over LAN."""
+    return hashlib.sha256(os.path.normcase(str(Path(root).resolve())).encode('utf-8')).hexdigest()
+
+
+def matches_project(status):
+    return status.get('project_id') == project_identity(ROOT)
 
 
 def health():
@@ -32,6 +43,11 @@ def main():
     args = parser.parse_args()
     existing = health()
     if existing:
+        if not matches_project(existing):
+            print('Port 8765 is serving a different or older Touchline installation.')
+            print('Close its launcher, then reopen Start Touchline.cmd from: ' + str(ROOT))
+            print('The browser was not opened because it would show the wrong project.')
+            return 1
         if args.lan and not existing.get('network_access'):
             print('Touchline Studio is already running in local-only mode.')
             print('Close the existing launcher window, then start it again for phone access.')
@@ -64,7 +80,7 @@ def main():
     deadline = time.monotonic() + 20
     while time.monotonic() < deadline:
         ready = health()
-        if ready:
+        if ready and matches_project(ready):
             print('Touchline Studio is ready: ' + URL)
             if ready.get('phone_url'):
                 print('Phone link (same Wi-Fi): ' + ready['phone_url'])

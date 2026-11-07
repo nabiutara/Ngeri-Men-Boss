@@ -25,7 +25,15 @@
     "optional": "bytetrack",
     "implementation": "Ultralytics built-ins",
     "person_duplicate_iou": 0.7,
-    "score_fusion": false
+    "score_fusion": false,
+    "reid": {
+      "default": true,
+      "mode": "lightweight",
+      "descriptor": "Multi-zone spatial-color appearance embedding (jersey, shorts, full body in Lab/HSV)",
+      "proximity_thresh": 0.25,
+      "appearance_thresh": 0.75,
+      "fallback_mode": "motion-only (BYTETracker or BoT-SORT without ReID)"
+    }
   },
   "physical_measurements": {
     "units": "dimensionless normalized coordinates",

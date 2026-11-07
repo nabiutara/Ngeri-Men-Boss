@@ -22,6 +22,7 @@ from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from urllib.parse import parse_qs, urlsplit
 import uuid
 import webbrowser
+from launch import project_identity
 
 ROOT = Path(__file__).resolve().parent
 DATA = ROOT / "work"
@@ -60,11 +61,13 @@ def update_job(job_id: str, **values) -> None:
 
 
 def track_video(source: Path, output: Path, *, model_name="football-best.pt", confidence=.1,
-                stride=1, tracker_name="botsort", imgsz=960, source_name=None,
-                progress=None, cancel=None, reviewed_palette=None, source_sha256=None) -> dict:
+                stride=1, tracker_name="botsort", with_reid=True, reid_mode="lightweight",
+                imgsz=960, source_name=None, progress=None, cancel=None, reviewed_palette=None,
+                source_sha256=None) -> dict:
     from football_engine import track_football
     return track_football(source, output, models_dir=MODELS, model_name=model_name,
                           confidence=confidence, stride=stride, tracker_name=tracker_name,
+                          with_reid=with_reid, reid_mode=reid_mode,
                           imgsz=imgsz, source_name=source_name, progress=progress, cancel=cancel,
                           reviewed_palette=reviewed_palette, source_sha256=source_sha256)
 
@@ -100,6 +103,18 @@ class Handler(SimpleHTTPRequestHandler):
         if "/api/jobs/" not in str(args[0] if args else ""):
             super().log_message(format, *args)
 
+    def end_headers(self):
+        if not urlsplit(self.path).path.startswith('/api/'):
+            self.send_header('Cache-Control', 'no-store')
+        super().end_headers()
+
+    def send_head(self):
+        # Local edits can retain timestamps. Always send current asset bytes.
+        for header in ('If-Modified-Since', 'If-None-Match'):
+            if header in self.headers:
+                del self.headers[header]
+        return super().send_head()
+
     def json_response(self, data, status=200):
         body = json.dumps(data).encode("utf-8")
         self.send_response(status)
@@ -133,7 +148,7 @@ class Handler(SimpleHTTPRequestHandler):
             return
         path = urlsplit(self.path).path
         if path == "/api/health":
-            self.json_response({"app": "touchline-studio", "ready": dependencies_ready(), "version": 3, "reviewed_training": True, "models": sorted(ALLOWED_MODELS), "football_model_ready": (MODELS / "football-best.pt").exists(), "network_access": getattr(self.server, "network_access", False), "phone_url": getattr(self.server, "phone_url", None)})
+            self.json_response({"app": "touchline-studio", "project_id": project_identity(ROOT), "ready": dependencies_ready(), "version": 3, "reviewed_training": True, "models": sorted(ALLOWED_MODELS), "football_model_ready": (MODELS / "football-best.pt").exists(), "network_access": getattr(self.server, "network_access", False), "phone_url": getattr(self.server, "phone_url", None)})
             return
         if path == '/api/training' or re.fullmatch(r'/api/training/jobs/[a-f0-9]{32}/(candidate|manifest)', path):
             if not dependencies_ready():
@@ -231,13 +246,15 @@ class Handler(SimpleHTTPRequestHandler):
             confidence = float(query.get("conf", ["0.1"])[0])
             stride = int(query.get("stride", ["1"])[0])
             tracker_name = query.get("tracker", ["botsort"])[0]
+            with_reid = query.get("reid", ["1"])[0].lower() in {"1", "true", "yes"}
+            reid_mode = query.get("reid_mode", ["lightweight"])[0]
             imgsz = int(query.get("imgsz", ["960"])[0])
             size = int(self.headers.get("Content-Length", "0"))
             if not 0 < size <= MAX_UPLOAD:
                 raise ValueError("Upload an actual video smaller than 2 GB")
             if model_name not in ALLOWED_MODELS or extension not in ALLOWED_EXTENSIONS:
                 raise ValueError("Unsupported model or video extension")
-            if not .05 <= confidence <= .9 or stride not in {1, 2, 3} or tracker_name not in {"bytetrack", "botsort"} or imgsz not in {640, 960, 1280}:
+            if not .05 <= confidence <= .9 or stride not in {1, 2, 3} or tracker_name not in {"bytetrack", "botsort"} or reid_mode not in {"lightweight", "model"} or imgsz not in {640, 960, 1280}:
                 raise ValueError("Invalid tracking settings")
         except (ValueError, TypeError) as exc:
             self.json_response({"error": str(exc)}, 400)
@@ -270,7 +287,9 @@ class Handler(SimpleHTTPRequestHandler):
                     remaining -= len(chunk)
             update_job(job_id, status="running", message="Preparing YOLO")
             threading.Thread(target=process_job, args=(job_id, source, filename,
-                {"model_name": model_name, "confidence": confidence, "stride": stride, "tracker_name": tracker_name, "imgsz": imgsz}), daemon=True).start()
+                {"model_name": model_name, "confidence": confidence, "stride": stride,
+                 "tracker_name": tracker_name, "with_reid": with_reid, "reid_mode": reid_mode,
+                 "imgsz": imgsz}), daemon=True).start()
             self.json_response({"id": job_id}, 202)
         except Exception as exc:
             source.unlink(missing_ok=True)

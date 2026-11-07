@@ -86,9 +86,21 @@ box.currentPlayers=[{...p,id:12,connectionEstimate:true}];
 box.refreshConnectionControls(new Map([[12,{x:20,y:20,estimated:true}]]),0);
 assert.equal(controls.connectReattach.disabled,true,'Cannot reattach to a guessed position');
 // Decoded media time, including paused seek completion, is the overlay clock.
-let callback,seeking;Object.assign(box,{video:{requestVideoFrameCallback:fn=>{callback=fn;},addEventListener:(name,fn)=>{if(name==='seeking')seeking=fn;},currentTime:2,duration:10,playbackRate:1.5},needsRelink:false,playing:true,lastPresentedAt:0,lastPresentedMediaTime:0,updateTime:()=>{}});
+let callback,seeking;const renderedTimes=[];Object.assign(box,{video:{requestVideoFrameCallback:fn=>{callback=fn;},addEventListener:(name,fn)=>{if(name==='seeking')seeking=fn;},currentTime:2,duration:10,playbackRate:1.5},needsRelink:false,playing:true,lastPresentedAt:0,lastPresentedMediaTime:0,updateTime:()=>{},render:()=>renderedTimes.push(box.time)});
 vm.runInContext(app.slice(app.indexOf('if(video.requestVideoFrameCallback){'),app.indexOf('let connectionFrom=null;')),box);
-callback(100,{mediaTime:1.25});assert.equal(box.lastPresentedMediaTime,1.25);assert.ok(Math.abs(box.mediaTimeAt(116)-1.274)<1e-9,'Interpolate the media clock at display refresh between decoded frames');
-box.video.playbackRate=1;assert.ok(Math.abs(box.mediaTimeAt(116)-1.266)<1e-9,'Respect playback speed');
+callback(100,{mediaTime:1.25});assert.equal(box.lastPresentedMediaTime,1.25);assert.equal(box.mediaTimeAt(116),1.25,'Hold overlays on the displayed frame instead of predicting forward');
+assert.deepEqual(renderedTimes,[1.25],'Draw the image and overlays together at decoded-frame delivery');
+box.video.playbackRate=1;assert.equal(box.mediaTimeAt(116),1.25,'Playback speed must not advance overlays without a new frame');
+box.video.playbackRate=.25;assert.equal(box.mediaTimeAt(200),1.25,'Slow playback holds the displayed frame and its rings');
+callback(220,{mediaTime:1.283333});assert.equal(box.mediaTimeAt(230),1.283333);
+assert.equal(box.mediaTimeAt(500),2,'Retain the playback-clock fallback if frame callbacks stop');
 seeking();assert.equal(box.lastPresentedAt,-Infinity);assert.equal(box.mediaTimeAt(200),2,'Fall back to the seek target until a decoded frame arrives');
+box.playing=false;callback(550,{mediaTime:.5});assert.equal(box.time,.5);assert.equal(renderedTimes.at(-1),.5,'Paused backward seek redraws the decoded destination');
+box.video.requestVideoFrameCallback=undefined;box.video.currentTime=3;assert.equal(box.mediaTimeAt(560),3,'Browsers without frame callbacks use the playback clock');
+// During playback only decoded-frame callbacks draw; RAF remains the fallback.
+Object.assign(box,{lastFrame:0,requestAnimationFrame:()=>{},playing:true,lastPresentedAt:600,video:{requestVideoFrameCallback:()=>{},currentTime:3},state:{demo:false},needsRelink:false});
+vm.runInContext(app.slice(app.indexOf('function tick('),app.indexOf('FrameReviewUI.mount(')),box);
+let draws=renderedTimes.length;box.tick(616);assert.equal(renderedTimes.length,draws,'Do not redraw a video frame with a separate RAF clock');
+box.tick(900);assert.equal(renderedTimes.length,draws+1,'RAF takes over if decoded-frame callbacks stop');
+box.playing=false;box.tick(916);assert.equal(renderedTimes.length,draws+2,'Paused editing still redraws');
 console.log('PASS: chosen edges follow movement, missing/cut handling, pair/sequence editing, undo, serialization, decoded-frame clock and seeks.');

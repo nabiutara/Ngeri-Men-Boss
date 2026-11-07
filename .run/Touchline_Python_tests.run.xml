@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="Touchline Python tests" type="PythonConfigurationType" factoryName="Python">
-    <module name="Touchline Studio" />
+    <module name="touchline-studio" />
     <option name="SDK_HOME" value="$PROJECT_DIR$/../../work/yolo-env/Scripts/python.exe" />
     <option name="SDK_NAME" value="Python 3.13 (Touchline Studio)" />
     <option name="IS_MODULE_SDK" value="false" />

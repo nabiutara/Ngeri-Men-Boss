@@ -5,8 +5,8 @@ did not expose a usable PyCharm window, and registering a new global SDK through
 a direct configuration write was not granted. Consequently interpreter selection
 has not been verified in the IDE. Follow this once to finish the local setup.
 
-1. Double-click the adjacent `outputs/Open Touchline in PyCharm.cmd` file, or open
-   PyCharm and select **File → Open** and this `touchline-studio` directory.
+1. Open PyCharm, select **File > Open**, and choose this `touchline-studio` directory.
+   To use the app without an editor, double-click **Start Touchline.cmd** instead.
 2. If PyCharm asks where to open the project, choose a new window to keep your other
    project open. Review any project-trust prompt yourself.
 3. Open **File → Settings → Project: Touchline Studio → Python Interpreter**.
@@ -21,7 +21,7 @@ has not been verified in the IDE. Follow this once to finish the local setup.
    the interpreter to the project. The environment already contains the installed
    YOLO dependencies; creating another environment is unnecessary for this computer.
 6. Choose **Touchline Studio** from the Run selector and click Run. It runs
-   `server.py --open` from this project folder. If the saved Run configuration still
+   `launch.py --lan` from this project folder. If the saved Run configuration still
    reports an invalid interpreter, open **Run → Edit Configurations**, select it,
    and set its Python interpreter to the same existing environment.
 7. Choose **Touchline Python tests** to run the Python regression suite, or

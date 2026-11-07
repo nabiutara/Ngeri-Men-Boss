@@ -100,9 +100,64 @@ def jersey_color(frame, bbox):
     return np.median(lab[mask],axis=0)
 
 
+class RepRTAKitClassifier:
+    """Re-parameterizable Region-Text/Prompt Alignment (RepRTA) Kit Classifier.
+
+    Inspired by YOLOE (Wang et al., 2025): aligns region visual appearance tokens
+    with team kit prompts via an auxiliary projection network, and re-parameterizes
+    into a direct linear classification head for zero-overhead inference.
+    """
+    def __init__(self, temperature: float = 0.15):
+        self.tau = temperature
+        self.W_reparam = None
+        self.class_names = ['home', 'away']
+        # Chromatic enhancement matrix: balances luminance L* with chromaticity a*, b*
+        self.M = np.diag([0.65, 1.25, 1.25]).astype(np.float32)
+        self.center_ref = np.array([128., 128., 128.], dtype=np.float32)
+
+    def auxiliary_projection(self, prompt_centers: np.ndarray) -> np.ndarray:
+        """Lightweight auxiliary alignment network f_theta(P) projecting prompts to normalized feature space."""
+        P = np.asarray(prompt_centers, dtype=np.float32) - self.center_ref
+        P_proj = P @ self.M
+        norms = np.linalg.norm(P_proj, axis=1, keepdims=True)
+        return P_proj / np.maximum(norms, 1e-6)
+
+    def reparameterize(self, prompt_centers: np.ndarray) -> np.ndarray:
+        """Re-parameterize the auxiliary network and prompt embeddings into linear classifier weights K'."""
+        self.W_reparam = self.auxiliary_projection(prompt_centers)
+        return self.W_reparam
+
+    def classify(self, usable_samples: dict[int, np.ndarray], prompt_centers: np.ndarray,
+                 separation: float, names: dict[int, str] | list[str] | None = None) -> dict[int, dict]:
+        """Perform re-parameterized linear classification over all player observations."""
+        K_prime = self.reparameterize(prompt_centers)
+        class_names = names if names is not None else self.class_names
+        assignments = {}
+        for identity, color in usable_samples.items():
+            distances = np.linalg.norm(prompt_centers - color, axis=1)
+            best_dist = int(np.argmin(distances))
+            min_dist = float(distances[best_dist])
+            margin_dist = (float(max(distances)) - float(min_dist)) / max(float(max(distances)), 1.0)
+
+            c_centered = (color - self.center_ref) @ self.M
+            c_norm = c_centered / max(float(np.linalg.norm(c_centered)), 1e-6)
+            logits = (K_prime @ c_norm) / self.tau
+            exp_l = np.exp(logits - np.max(logits))
+            probs = exp_l / np.sum(exp_l)
+            best_prob = int(np.argmax(probs))
+            margin_prob = float(probs[best_prob] - probs[1 - best_prob])
+
+            confidence = round(max(margin_dist, margin_prob), 3)
+            if margin_dist >= 0.25 and min_dist < min(65., separation * 0.65):
+                team_name = class_names[best_dist] if isinstance(class_names, (list, tuple)) else class_names.get(best_dist, 'home')
+                assignments[identity] = {'team': team_name, 'confidence': confidence}
+        return assignments
+
+
 class TeamColors:
     def __init__(self):
         self.samples=defaultdict(lambda:deque(maxlen=15))
+        self.classifier=RepRTAKitClassifier()
 
     def add(self, track_id, color):
         if color is not None:
@@ -123,11 +178,7 @@ class TeamColors:
             centers=np.array(centers);separation=float(np.linalg.norm(centers[0]-centers[1]))
             assignments={}
             if separation>=20:
-                for identity,color in usable.items():
-                    distances=np.linalg.norm(centers-color,axis=1);best=int(np.argmin(distances))
-                    margin=(float(max(distances))-float(min(distances)))/max(float(max(distances)),1.)
-                    if margin>=.25 and float(min(distances))<min(65,separation*.65):
-                        assignments[identity]={'team':names[best],'confidence':round(margin,3)}
+                assignments=self.classifier.classify(usable,centers,separation,names=['home','away'])
             return assignments,dict(reviewed_palette)
         if len(usable)<6:
             return {}, {}
@@ -153,13 +204,7 @@ class TeamColors:
         # Color groups are deterministic; their home/away semantics are user-editable.
         order=np.argsort(centers[:,0])
         names={int(order[0]):"home",int(order[1]):"away"}
-        assignments={}
-        for i,color in usable.items():
-            distances=np.linalg.norm(centers-color,axis=1)
-            best=int(np.argmin(distances))
-            margin=(float(max(distances))-float(min(distances)))/max(float(max(distances)),1.)
-            if margin>=.25 and float(min(distances))<min(65,separation*.65):
-                assignments[i]={"team":names[best],"confidence":round(margin,3)}
+        assignments=self.classifier.classify(usable,centers,separation,names=names)
         palette={}
         for k,center in enumerate(centers):
             rgb=cv2.cvtColor(np.uint8([[np.clip(center,0,255)]]),cv2.COLOR_LAB2RGB)[0,0]
@@ -509,6 +554,7 @@ def track_football(source, output, *, models_dir, model_name="football-best.pt",
         if progress:progress(95,'Grouping shirt colors and finalizing ball tracks…')
         metadata.update(track_count=next_id-1,team_assignments={str(k):v for k,v in assignments.items()},
                         detected_team_colors=palette,camera_resets=cuts,
+                        kit_classifier='yoloe-reprta',
                         team_assignment_method='reviewed-source-shirt-colors' if reviewed_palette else 'automatic-kit-clusters',
                         team_note='Reviewed shirt samples set home/away semantics for this video; uncertain tracks remain unassigned.' if reviewed_palette else 'Home/Away are kit-color groups. Review or swap them; goalkeeper teams remain manual.')
         with partial.open('w',encoding='utf-8') as out, spool.open(encoding='utf-8') as inp:

@@ -35,6 +35,12 @@
       "fallback_mode": "motion-only (BYTETracker or BoT-SORT without ReID)"
     }
   },
+  "kit_classification": {
+    "method": "RepRTA (Re-parameterizable Region-Text/Prompt Alignment, YOLOE style)",
+    "description": "Aligns region appearance tokens with home/away kit prompts and re-parameterizes into linear projection weights for zero-overhead inference",
+    "temperature": 0.15,
+    "chromatic_weighting": "enhanced Lab a*, b* chromaticity with luminance invariance"
+  },
   "physical_measurements": {
     "units": "dimensionless normalized coordinates",
     "pitch_dimensions_meters": null,

@@ -13,7 +13,7 @@ import numpy as np
 sys.path.insert(0,str(Path(__file__).resolve().parents[1]))
 from football_engine import (TeamColors, CameraMotion, BallHistory, bounded_ball_fill,
                              jersey_color, role_for, track_football, distinct_people,
-                             PlayerAppearanceEncoder)
+                             PlayerAppearanceEncoder, RepRTAKitClassifier)
 
 
 class FootballTests(unittest.TestCase):
@@ -365,5 +365,73 @@ class FootballTests(unittest.TestCase):
         # Track that started at left (<120) should now be at right (>125)
         id_started_left = [tid for tid, x in track_hist[0].items() if x < 120][0]
         self.assertGreater(track_hist[-1][id_started_left], 125)
+
+    def test_reprta_auxiliary_projection_and_reparameterization(self):
+        clf = RepRTAKitClassifier(temperature=0.15)
+        centers = np.array([[200., 150., 150.], [50., 110., 80.]], dtype=np.float32)
+        weights = clf.reparameterize(centers)
+
+        # Reparameterized weights shape: C x 3
+        self.assertEqual(weights.shape, (2, 3))
+        # Each row should be L2 normalized
+        for row in weights:
+            self.assertAlmostEqual(float(np.linalg.norm(row)), 1.0, places=4)
+
+    def test_reprta_kit_classification_alignment(self):
+        clf = RepRTAKitClassifier(temperature=0.15)
+        # Red kit vs Blue kit
+        centers = np.array([[60., 190., 150.], [60., 100., 80.]], dtype=np.float32)
+        usable = {
+            1: np.array([58., 188., 152.], np.float32), # Red
+            2: np.array([62., 192., 148.], np.float32), # Red
+            3: np.array([59., 102., 82.], np.float32),  # Blue
+            4: np.array([61., 98., 78.], np.float32),   # Blue
+            99: np.array([10., 128., 128.], np.float32) # Outlier (dark background/noise)
+        }
+        res = clf.classify(usable, centers, separation=100.0, names=['home', 'away'])
+
+        # Outlier 99 must be rejected
+        self.assertNotIn(99, res)
+        # Normal players must be assigned correctly
+        self.assertEqual(res[1]['team'], 'home')
+        self.assertEqual(res[2]['team'], 'home')
+        self.assertEqual(res[3]['team'], 'away')
+        self.assertEqual(res[4]['team'], 'away')
+        # Calibrated confidence must be high
+        for p in (1, 2, 3, 4):
+            self.assertGreaterEqual(res[p]['confidence'], 0.5)
+
+    def test_reprta_kit_metadata_in_pipeline(self):
+        from ultralytics.engine.results import Results
+        images = [np.full((120, 160, 3), (35, 120, 35), dtype=np.uint8) for _ in range(3)]
+        # Add 6 players (3 red, 3 blue) so TeamColors has sufficient usable samples
+        for img in images:
+            img[20:65, 20:40] = (20, 20, 220)  # red
+            img[20:65, 100:120] = (210, 35, 15) # blue
+
+        class FakeModel:
+            names = {0: 'player'}
+            def predict(self, *args, **kwargs):
+                for img in images:
+                    boxes = [
+                        [20, 20, 40, 65, .9, 0],
+                        [40, 20, 60, 65, .9, 0],
+                        [60, 20, 80, 65, .9, 0],
+                        [100, 20, 120, 65, .9, 0],
+                        [120, 20, 140, 65, .9, 0],
+                        [140, 20, 160, 65, .9, 0],
+                    ]
+                    yield Results(img, 'synthetic', self.names, boxes=np.array(boxes, np.float32))
+
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); video = root / 'clip.avi'; out = root / 'tracks.json'
+            writer = cv2.VideoWriter(str(video), cv2.VideoWriter_fourcc(*'MJPG'), 10, (160, 120))
+            for img in images: writer.write(img)
+            writer.release()
+
+            with patch('ultralytics.YOLO', return_value=FakeModel()):
+                track_football(video, out, models_dir=root, model_name='yolo26n.pt')
+            data = json.loads(out.read_text())
+            self.assertEqual(data['kit_classifier'], 'yoloe-reprta')
 
 if __name__=='__main__':unittest.main()

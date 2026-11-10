@@ -14,6 +14,13 @@ and CSS are served fresh when you reload the page; Python changes require a rest
 
 A local soccer-video analysis workspace with customizable player overlays, tactical drawings, formation boards, and your own interpretation notes.
 
+**Tactical patterns:** find candidate zone entries and observed time in a zone,
+review their video timestamps, and save editable notes. Open **Tactical patterns**
+below the player connections controls after tracking and calibrating your clip.
+Reusable templates and reviewed-result JSON exports are included. Read
+[TACTICAL-PATTERNS.md](TACTICAL-PATTERNS.md) for the workflow, Codeball inspiration,
+verification report, and calibration/sampling limits.
+
 For frame labeling, shirt-color corrections, and local candidate training, follow
 **[FRAME-LABELING.md](FRAME-LABELING.md)**. The app's **Review frame labels** button
 opens the editor. Rings, boxes, and labels share one color source, with per-track

@@ -14,12 +14,32 @@ and CSS are served fresh when you reload the page; Python changes require a rest
 
 A local soccer-video analysis workspace with customizable player overlays, tactical drawings, formation boards, and your own interpretation notes.
 
-**Tactical patterns:** find candidate zone entries and observed time in a zone,
-review their video timestamps, and save editable notes. Open **Tactical patterns**
-below the player connections controls after tracking and calibrating your clip.
-Reusable templates and reviewed-result JSON exports are included. Read
-[TACTICAL-PATTERNS.md](TACTICAL-PATTERNS.md) for the workflow, Codeball inspiration,
-verification report, and calibration/sampling limits.
+**Local library:** imported videos are copied into one `Library/` folder alongside
+analysis history, saved projects and reviewed frames. Click **Library** in the top
+bar to reopen work or open its folders in File Explorer. Existing PC reviews and
+analysis files are copied in automatically; their originals remain as a recovery
+copy. See [LIBRARY.md](LIBRARY.md) for the folder layout, recovery and backup details.
+
+The **Rings & connections** panel below player connections offers animated, solid,
+and minimal rings, contrast outlines, assignment review cues, connection opacity,
+directional arrows, and endpoint dots. Your kit colors and per-player overrides
+remain the color source. Lines render below rings and stop at their edges; linked
+team shapes use the same corrected foot anchors as manually connected pairs.
+
+**Team?** marks automatic assignments with missing color-separation evidence or a
+margin below 0.45; this threshold is a display heuristic, not a probability or an
+identity-confidence score. **Unassigned** means no Home/Away assignment. Select a
+player and choose their team, or press **Confirm selected player's team**, to record
+your review. **Est.** marks a short-gap interpolated position and remains visible
+even if team uncertainty cues are disabled. Estimated rings and connections are
+dashed and faded; long gaps still hide the connection. Opacity compounds with the
+existing overall overlay opacity. Arrow direction follows player selection order;
+linked team shapes follow their existing top-to-bottom order, not a detected pass.
+
+Tactical Patterns has been removed. Existing project notes, drawings, tracking,
+and corrections are preserved; obsolete pattern settings are ignored on import.
+Its implementation and tests remain recoverable from Git history.
+
 
 For frame labeling, shirt-color corrections, and local candidate training, follow
 **[FRAME-LABELING.md](FRAME-LABELING.md)**. The app's **Review frame labels** button
@@ -97,15 +117,17 @@ application files before creating an environment or installing anything.
 - **Draw:** Add lines, arrows, circles, zones, or interpretation boxes. Select and drag to move, or drag the ending handle to resize. Change color, thickness, and start/end time. Drawings initially last eight seconds.
 - **Interpret:** Write freely in the session notes, add timestamped notes, or place editable text directly on the video. No interpretation text is generated for you.
 - **Formation:** Choose 4-3-3, 4-4-2, 4-2-3-1, 3-5-2, or 3-4-3 and move the board markers. With all four pitch corners visible, calibrate top-left, top-right, bottom-right, bottom-left. Assigned tracks then map onto the board. Optical flow compensates modest pan/zoom within the shot. Recalibrate after cuts, large perspective changes, lost camera tracking, or visible drift. Templates are tactical references, not automatic formation classification.
-- **Save:** Edits autosave in your browser; tracking results use its local cache. Save a project JSON for a portable backup. Projects contain tracking and edits, but do not embed video. Re-link the original file by importing the same filename.
+- **Save:** Edits autosave to Library for copied local videos, with a browser recovery copy. Wait for Saved in Library. Reopen the video/project from Library, or use Save project for a portable JSON backup without embedded video. Copied videos are identified by content, not filename.
 - **Export:** Save an annotated PNG, text notes, an editable project, or a silent WebM recording from the current playhead. WebM export runs in real time, requires a visible tab, and is limited to five minutes per recording. It does not preserve audio.
 
 The initial demo contains animated illustrations and simulated tracks. Import a real clip to use real detections. No demo tracks are placed over uploaded footage.
 
 ## Controls
 
-Foot markers use three gently rotating arcs on one thin, glowing ellipse, with a
-rear gap for the legs. Ring size adapts to the player box, up to your Circle size
+Foot markers default to three gently rotating arcs on one ellipse, with a rear
+gap for the legs. Solid and minimal styles are also available. Neutral contrast
+outlines improve separation on bright and dark footage without changing kit hue;
+they do not sample video pixels. Ring size adapts to the player box, up to your Circle size
 setting. Full-body / torso duplicates are filtered together for rings, labels,
 selection and formation display. The original tracking data is retained.
 
@@ -145,8 +167,8 @@ Import the matching video in the browser, then use **Get the local YOLO app → 
 - The default model is football-specific. A short MATCH1 development comparison and selected-player review have been completed; full-match tracking accuracy remains unmeasured. Small distant players, overlaps, cuts, and camera motion can cause missed detections or ID switches.
 - Foot markers use the bottom center of a detected person box, not anatomical pose estimation. Formation mapping assumes a flat pitch and a reliable camera transform. Partial-pitch broadcast views need manual board work or a more advanced field-line/camera model.
 - Use H.264 MP4 for broad playback compatibility. Uploads are limited to 2 GB; analysis accepts videos up to four hours and 250,000 processed frames. Very large result files may be slow to load or export.
-- The runner accepts one job at a time and allows devices on the same Wi-Fi when launched with **Start Touchline.cmd**. It is not a public hosted inference server. Uploaded temporary copies are removed after completion/cancellation; tracking result files and downloaded weights remain under `work/`.
-- The app's runtime data is not included in the source archive. Use **Save project** for a backup; clearing browser storage removes autosaved edits.
+- The runner accepts one job at a time and allows devices on the same Wi-Fi when launched with **Start Touchline.cmd**. Videos, results, projects and reviews persist in `Library/`; transient job copies are removed. Weights and logs remain under `work/`.
+- User data is excluded from the source archive. Close the app and back up the entire `Library/` folder. Browser-only drafts still require export or confirmation to keep them outside browser storage.
 
 ## Verification and performance
 

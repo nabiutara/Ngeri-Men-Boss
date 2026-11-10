@@ -104,3 +104,11 @@ let draws=renderedTimes.length;box.tick(616);assert.equal(renderedTimes.length,d
 box.tick(900);assert.equal(renderedTimes.length,draws+1,'RAF takes over if decoded-frame callbacks stop');
 box.playing=false;box.tick(916);assert.equal(renderedTimes.length,draws+2,'Paused editing still redraws');
 console.log('PASS: chosen edges follow movement, missing/cut handling, pair/sequence editing, undo, serialization, decoded-frame clock and seeks.');
+const shortened=c.geometry({x:0,y:0,radius:18},{x:100,y:0,radius:18});
+assert.equal(shortened.x1,21);assert.equal(shortened.x2,79);
+assert.equal(c.geometry({x:0,y:0,radius:18},{x:10,y:0,radius:18}),null,'Overlapping rings do not get reversed lines');
+assert.equal(c.geometry({x:0,y:0},{x:0,y:0}),null);
+const strokes=[],fills=[],alpha=[];
+const pen={globalAlpha:.8,save(){alpha.push(this.globalAlpha);},restore(){this.globalAlpha=alpha.pop();},setLineDash(d){this.dash=d;},beginPath(){},moveTo(){},lineTo(){},closePath(){},arc(){},stroke(){strokes.push({alpha:this.globalAlpha,dash:this.dash});},fill(){fills.push(this.fillStyle);}};
+c.draw(pen,{from:{x:0,y:0,estimated:true},to:{x:100,y:0},color:'#ab1234',width:2},{connectionStyle:'arrow',connectionOpacity:50,connectionDots:false});
+assert.equal(strokes[0].dash.join(','),'6,4');assert.ok(Math.abs(strokes[0].alpha-.22)<1e-8);assert.equal(pen.globalAlpha,.8);assert.equal(fills.length,1,'Arrow rendered without optional endpoint dots');

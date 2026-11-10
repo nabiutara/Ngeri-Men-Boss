@@ -64,3 +64,15 @@ for(const fixture of fixtures){
 // Similar aligned players with different head AND foot heights must survive.
 assert.equal(rings.unique([player,{...player,id:8,y:.74}]).length,2);
 console.log('PASS: 6 reviewed MATCH1 duplicates, manual override, separate nearby players, 3 arcs on one ellipse, one render per player, and smoothing resets.');
+assert.equal(rings.cue({...player,team_confidence:.2},{team:'home'},{}).label,'Team?');
+assert.equal(rings.cue(player,{team:'home'},{}).label,'Team?','Missing margin is unknown, not high confidence');
+assert.equal(rings.cue(player,{team:'home',teamConfirmed:true},{}).label,'');
+assert.equal(rings.cue(player,{team:'neutral',teamConfirmed:true},{}).label,'Unassigned');
+assert.equal(rings.cue({...player,connectionEstimate:true},{team:'home',teamConfirmed:true},{showUncertainty:false}).label,'Est.','Estimates remain marked even when team cues are off');
+assert.equal(rings.cue(player,{team:'home'},{showUncertainty:false}).label,'');
+const strokes=[],stack=[];
+const paint={globalAlpha:.9,save(){stack.push(this.globalAlpha);},restore(){this.globalAlpha=stack.pop();},translate(){},beginPath(){},rect(){},clip(){},setLineDash(v){this.dash=v;},ellipse(){},stroke(){strokes.push({color:this.strokeStyle,width:this.lineWidth,alpha:this.globalAlpha,dash:this.dash});}};
+rings.draw(paint,{x:10,y:20},18,'#112233',0,{style:'solid',contrast:true,cue:{dashed:true,opacity:.6}});
+assert.equal(strokes.length,3);assert.equal(strokes.at(-1).color,'#112233','Contrast preserves custom color');
+assert.equal(strokes.at(-1).alpha,.54);assert.equal(paint.globalAlpha,.9,'Ring opacity cannot leak into other overlays');
+assert.equal(strokes.at(-1).dash.join(','),'3,3');

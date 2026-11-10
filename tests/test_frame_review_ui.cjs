@@ -95,6 +95,15 @@ async function run(){
  assert.equal(Number(nodes.get('rfTime').value),.4,'Frame stepping must not accumulate rounded timestamp drift');
  assert.equal(requests.filter(r=>r.url==='/api/training/jobs').length,0,'Reviewing samples never starts model training');
  await nodes.get('rfClose').onclick();
+ // Confirmed PC reviews survive clearing the browser review cache.
+ saved.clear();
+ const remote={source_sha256:body.source_sha256,match_id:body.match_id,split:body.split,frame:body.frame,reviewed_utc:new Date().toISOString()};
+ box.fetch=async url=>({ok:true,json:async()=>url.startsWith('/api/library/reviews/')?{records:[remote]}:emptySummary()});
+ await editor.open();
+ assert.equal(nodes.get('rfObjects').children.length,1);
+ assert.equal(nodes.get('rfRole').value,'ball','Load the stored reviewed label, not a new player proposal');
+ assert.equal(nodes.get('rfComplete').checked,true);
+ await nodes.get('rfClose').onclick();
  console.log('PASS: editor capture, full-frame confirmation, draft invalidation, drawing, manual colors, background samples, and upload/export wiring.');
 }
 if(require.main===module)run().catch(error=>{console.error(error);process.exitCode=1;});

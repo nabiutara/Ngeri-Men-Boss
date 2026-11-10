@@ -1,8 +1,8 @@
 """Touchline Studio: local web workspace, reviewed training, and video tracking.
 
 No web framework is required to open the editing workspace. Install requirements.txt
-to enable YOLO tracking. Footage is processed locally and deleted from the job cache
-after processing. The football checkpoint is checksum-verified; Ultralytics supplies
+to enable YOLO tracking. Footage and results are retained in Library; temporary job
+copies are removed after processing. The football checkpoint is checksum-verified; Ultralytics supplies
 the general-purpose fallback weights on first use. Optional LAN access uses --lan.
 """
 from __future__ import annotations
@@ -37,6 +37,8 @@ JOBS: dict[str, dict] = {}
 LOCK = threading.Lock()
 TRAINING_WORKFLOW = None
 TRAINING_INIT_LOCK = threading.Lock()
+LIBRARY = None
+LIBRARY_INIT_LOCK = threading.Lock()
 MAX_UPLOAD = 2 * 1024**3
 ALLOWED_MODELS = {"football-best.pt", "yolo26n.pt", "yolo26s.pt"}
 ALLOWED_EXTENSIONS = {".mp4", ".mov", ".m4v", ".webm", ".mkv", ".avi"}
@@ -51,8 +53,17 @@ def training_workflow():
     with TRAINING_INIT_LOCK:
         if TRAINING_WORKFLOW is None:
             from training_workflow import TrainingWorkflow
-            TRAINING_WORKFLOW = TrainingWorkflow(DATA / 'training', MODELS)
+            TRAINING_WORKFLOW = TrainingWorkflow(library().path('reviewed-frames'), MODELS)
     return TRAINING_WORKFLOW
+
+
+def library():
+    global LIBRARY
+    with LIBRARY_INIT_LOCK:
+        if LIBRARY is None:
+            from library_store import Library
+            LIBRARY = Library(ROOT / 'Library', DATA)
+    return LIBRARY
 
 
 def update_job(job_id: str, **values) -> None:
@@ -76,19 +87,28 @@ def process_job(job_id: str, source: Path, source_name: str, settings: dict) -> 
     with LOCK:
         cancel = JOBS[job_id]["cancel"]
     output = JOBS_DIR / f"{job_id}.json"
+    archived = False
     try:
-        with source.open('rb') as handle:
-            source_hash = hashlib.file_digest(handle, 'sha256').hexdigest()
+        saved_video = library().retain(source, source_name)
+        source_hash = saved_video['id']
+        library().begin_run(job_id, saved_video, settings)
+        archived = True
+        update_job(job_id, library_video_id=source_hash, library_run_id=job_id)
         palette = training_workflow().reviewed_palette(source_hash)
         result = track_video(source, output, source_name=source_name, **settings,
                              reviewed_palette=palette, source_sha256=source_hash,
                              progress=lambda p, m: update_job(job_id, progress=p, message=m), cancel=cancel)
+        library().finish_run(job_id, 'completed', output)
         source.unlink(missing_ok=True)
         update_job(job_id, status="completed", progress=100, message="Tracking complete", **result)
     except InterruptedError:
+        if archived:
+            library().finish_run(job_id, 'cancelled')
         update_job(job_id, status="cancelled", message="Analysis cancelled")
         output.unlink(missing_ok=True)
     except Exception as exc:
+        if archived:
+            library().finish_run(job_id, 'failed', error=str(exc))
         update_job(job_id, status="failed", error=str(exc), message="Analysis failed")
         output.unlink(missing_ok=True)
     finally:
@@ -147,8 +167,12 @@ class Handler(SimpleHTTPRequestHandler):
         if not self.valid_request():
             return
         path = urlsplit(self.path).path
+        if path == '/api/library' or path.startswith('/api/library/'):
+            from library_http import get
+            get(self, library())
+            return
         if path == "/api/health":
-            self.json_response({"app": "touchline-studio", "project_id": project_identity(ROOT), "ready": dependencies_ready(), "version": 3, "reviewed_training": True, "models": sorted(ALLOWED_MODELS), "football_model_ready": (MODELS / "football-best.pt").exists(), "network_access": getattr(self.server, "network_access", False), "phone_url": getattr(self.server, "phone_url", None)})
+            self.json_response({"app": "touchline-studio", "project_id": project_identity(ROOT), "ready": dependencies_ready(), "version": 3, "reviewed_training": True, "local_library": True, "models": sorted(ALLOWED_MODELS), "football_model_ready": (MODELS / "football-best.pt").exists(), "network_access": getattr(self.server, "network_access", False), "phone_url": getattr(self.server, "phone_url", None)})
             return
         if path == '/api/training' or re.fullmatch(r'/api/training/jobs/[a-f0-9]{32}/(candidate|manifest)', path):
             if not dependencies_ready():
@@ -208,6 +232,10 @@ class Handler(SimpleHTTPRequestHandler):
     def do_POST(self):
         if not self.valid_request(mutation=True):
             return
+        if urlsplit(self.path).path.startswith('/api/library/'):
+            from library_http import post
+            post(self, library())
+            return
         if urlsplit(self.path).path in {'/api/training/frames', '/api/training/jobs'}:
             if not dependencies_ready():
                 self.json_response({'error': 'Install tracking dependencies before saving training samples'}, 503)
@@ -250,7 +278,15 @@ class Handler(SimpleHTTPRequestHandler):
             reid_mode = query.get("reid_mode", ["lightweight"])[0]
             imgsz = int(query.get("imgsz", ["960"])[0])
             size = int(self.headers.get("Content-Length", "0"))
-            if not 0 < size <= MAX_UPLOAD:
+            video_id = query.get('video_id', [''])[0]
+            stored_video = None
+            if video_id:
+                if not re.fullmatch('[a-f0-9]{64}', video_id):
+                    raise ValueError('Invalid library video identity')
+                stored_video = library().item('videos', video_id)
+                filename = stored_video['name']
+                extension = Path(stored_video['path']).suffix.lower()
+            if stored_video is None and not 0 < size <= MAX_UPLOAD:
                 raise ValueError("Upload an actual video smaller than 2 GB")
             if model_name not in ALLOWED_MODELS or extension not in ALLOWED_EXTENSIONS:
                 raise ValueError("Unsupported model or video extension")
@@ -266,7 +302,7 @@ class Handler(SimpleHTTPRequestHandler):
             if any(j["status"] in {"uploading", "running"} for j in JOBS.values()):
                 self.json_response({"error": "An analysis is already running. Wait or cancel it first."}, 409)
                 return
-            # Retain at most three completed jobs. Footage itself is never retained.
+            # Bound transient job cache. Durable results and footage live in Library.
             completed = [key for key, job in JOBS.items() if job["status"] not in {"uploading", "running"}]
             for old_id in completed[:-2]:
                 (JOBS_DIR / f"{old_id}.json").unlink(missing_ok=True)
@@ -277,14 +313,17 @@ class Handler(SimpleHTTPRequestHandler):
         source = JOBS_DIR / f"{job_id}{extension}"
         try:
             self.connection.settimeout(120)
-            remaining = size
-            with source.open("wb") as handle:
-                while remaining:
-                    chunk = self.rfile.read(min(1024 * 1024, remaining))
-                    if not chunk:
-                        raise ValueError("The video upload was interrupted")
-                    handle.write(chunk)
-                    remaining -= len(chunk)
+            if stored_video:
+                shutil.copy2(library().path(stored_video['path']), source)
+            else:
+                remaining = size
+                with source.open("wb") as handle:
+                    while remaining:
+                        chunk = self.rfile.read(min(1024 * 1024, remaining))
+                        if not chunk:
+                            raise ValueError("The video upload was interrupted")
+                        handle.write(chunk)
+                        remaining -= len(chunk)
             update_job(job_id, status="running", message="Preparing YOLO")
             threading.Thread(target=process_job, args=(job_id, source, filename,
                 {"model_name": model_name, "confidence": confidence, "stride": stride,

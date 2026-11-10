@@ -5,7 +5,7 @@ if errorlevel 1 exit /b 1
 title Touchline Studio
 rem The single app entry point: always run the current source beside this file.
 rem Keep this launcher with the application, not copied on its own.
-for %%F in (requirements.txt launch.py server.py football_engine.py training_workflow.py dist\index.html) do (
+for %%F in (requirements.txt launch.py server.py football_engine.py training_workflow.py library_store.py library_http.py dist\index.html dist\library-ui.js) do (
   if not exist "%%F" goto incomplete_package
 )
 rem Bound numerical-library startup threads on machines with limited memory.

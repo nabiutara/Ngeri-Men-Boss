@@ -74,7 +74,16 @@ var FootMarkers = (() => {
     return [...byId.values()].filter(p => selected.has(p));
   }
 
-  function draw(context, point, radius, color, time = 0) {
+  function cue(player, info, settings={}, demo=false) {
+    if(player.connectionEstimate)return {label:'Est.',dashed:true,opacity:.6};
+    if(settings.showUncertainty===false||demo||player.role==='referee')return {label:'',dashed:false,opacity:1};
+    if(!['home','away'].includes(info.team))return {label:'Unassigned',dashed:true,opacity:.85};
+    // Team confidence is a color-separation margin, not a probability.
+    if(!info.teamConfirmed&&(!Number.isFinite(player.team_confidence)||player.team_confidence<.45))return {label:'Team?',dashed:true,opacity:.85};
+    return {label:'',dashed:false,opacity:1};
+  }
+
+  function draw(context, point, radius, color, time = 0, options = {}) {
     context.save();
     context.translate(point.x, point.y+2);
     // A fixed gap at the rear center leaves room for the player's legs while
@@ -83,18 +92,27 @@ var FootMarkers = (() => {
     context.rect(-radius-12, -radius-12, radius*2+24, radius*2+24);
     context.rect(-radius*0.29, -radius-12, radius*0.58, radius+12);
     context.clip('evenodd');
+    const style=options.style||'animated',cue=options.cue||{opacity:1,dashed:false};
+    context.globalAlpha *= cue.opacity;
+    context.setLineDash(cue.dashed?[3,3]:[]);
     context.strokeStyle = color;
     context.lineCap = 'round';
     context.lineWidth = 1.5;
     context.shadowColor = color;
-    context.shadowBlur = 5;
+    context.shadowBlur = style==='minimal'?0:5;
     // Three arcs on ONE ellipse. Phase follows video time, so pause, seek and
     // export reproduce the same ring, independent of display refresh rate.
     const phase = (time*0.7) % (Math.PI*2), sector = Math.PI*2/3;
-    for (let segment=0; segment<3; segment++) {
+    for (let segment=0; segment<(style==='animated'?3:1); segment++) {
       const start = phase+segment*sector;
       context.beginPath();
-      context.ellipse(0, 0, radius, radius*0.34, 0, start+0.16, start+sector-0.16);
+      context.ellipse(0, 0, radius, radius*0.34, 0, style==='animated'?start+0.16:0, style==='animated'?start+sector-0.16:Math.PI*2);
+      if(options.contrast){
+        // Two neutral casings preserve kit hue on both bright and dark footage.
+        context.shadowBlur=0;context.strokeStyle='#ffffff';context.lineWidth=5;context.stroke();
+        context.strokeStyle='#14271d';context.lineWidth=3.5;context.stroke();
+      }
+      context.strokeStyle=color;context.lineWidth=style==='minimal'?1:1.5;
       context.stroke();
     }
     context.restore();
@@ -105,5 +123,5 @@ var FootMarkers = (() => {
     for (const key of positions.keys()) if (!visible.has(key)) positions.delete(key);
   }
 
-  return {begin, position, unique, draw, finish};
+  return {begin, position, unique, draw, finish, cue};
 })();

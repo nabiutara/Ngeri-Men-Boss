@@ -20,5 +20,12 @@
  function invalidate(frame){frame.reviewed=false;frame.fully_annotated=false;delete frame.reviewed_utc;return frame;}
  function reviewedDocument(doc){validateDocument(doc);if(!String(doc.match_id||'').trim())throw Error('Enter a match ID first');const frames=doc.frames.filter(f=>f.reviewed===true&&f.fully_annotated===true).sort((a,b)=>a.t-b.t);if(!frames.length)throw Error('Confirm at least one fully reviewed frame');frames.forEach(f=>validateFrame(f,true));return {...doc,frames};}
  function color(info,settings,palette={},swapped=false){if(/^#[a-f0-9]{6}$/i.test(info.colorOverride||''))return info.colorOverride;const team=info.team,kitTeam=swapped?(team==='home'?'away':team==='away'?'home':team):team;return settings.useJerseyRingColors&&/^#[a-f0-9]{6}$/i.test(palette[kitTeam]||'')?palette[kitTeam]:team==='home'?settings.homeColor:team==='away'?settings.awayColor:'#d9ded4';}
- root.FrameReviewCore={roles,SHA256,hashFile,proposals,nearest,validateFrame,validateDocument,invalidate,reviewedDocument,color};
+ function ringColor(info,settings,palette={},swapped=false){
+  if(/^#[a-f0-9]{6}$/i.test(info.ringColorOverride||''))return info.ringColorOverride;
+  const team=info.team,kitTeam=swapped?(team==='home'?'away':team==='away'?'home':team):team;
+  if(settings.ringColorMode==='kit'&&/^#[a-f0-9]{6}$/i.test(palette[kitTeam]||''))return palette[kitTeam];
+  if(settings.ringColorMode==='team'||settings.ringColorMode==='kit')return team==='home'?(settings.ringHomeColor||settings.homeColor):team==='away'?(settings.ringAwayColor||settings.awayColor):'#d9ded4';
+  return color(info,settings,palette,swapped);
+ }
+ root.FrameReviewCore={ringColor,roles,SHA256,hashFile,proposals,nearest,validateFrame,validateDocument,invalidate,reviewedDocument,color};
 })(typeof globalThis==='object'?globalThis:this);

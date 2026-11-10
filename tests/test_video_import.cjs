@@ -16,6 +16,7 @@ const sandbox = {
 vm.createContext(sandbox);
 vm.runInContext(`
 let jobId=null, recording=false;
+let importGeneration=0, libraryUI=null;
 let clipFile={name:'original.mp4'};
 let state={annotations:[{text:'Keep this note'}]};
 let cleared=false;
@@ -29,5 +30,10 @@ vm.runInContext(functionSource, sandbox);
   assert.equal(vm.runInContext('state.annotations[0].text',sandbox),'Keep this note');
   assert.equal(vm.runInContext('cleared',sandbox),false);
   assert.deepEqual(revoked,['blob:rejected']);
+  sandbox.document.createElement=()=>({duration:10,set src(value){queueMicrotask(()=>this.onloadedmetadata());},removeAttribute(){},load(){}});
+  vm.runInContext("libraryUI={saveNow:async()=>{},retain:async()=>{throw Error('Disk full');}};",sandbox);
+  assert.equal(await sandbox.importVideo({name:'valid.mp4',size:100}),false);
+  assert.equal(vm.runInContext('clipFile.name',sandbox),'original.mp4','Failed library copy does not discard current video');
+  assert.equal(vm.runInContext('cleared',sandbox),false);
   console.log('PASS: rejected video imports preserve the current clip and edits, and release the rejected object URL.');
 })().catch(error => { console.error(error); process.exitCode=1; });

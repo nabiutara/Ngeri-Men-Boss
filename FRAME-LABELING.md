@@ -108,10 +108,12 @@ drawings and track overrides, and export reviewed labels for portable annotation
 `prepare_training.py` can still export an offline YOLO dataset from reviewed JSON
 and the original videos; see **EVALUATION.md**.
 
-The local PC collection is under `work/training/frames/`. It retains sampled JPEGs
-and labels, not the full source video. Keep the original video yourself if you need
-to revisit frames. The inference job's temporary full-video copy is deleted after
-processing as before. None of these runtime artifacts are included in the ZIP.
+The local PC collection is under `Library/reviewed-frames/frames/`. The Library
+screen shows thumbnails and opens each folder in File Explorer. The editor restores
+confirmed labels from the PC when they are absent from its browser cache. Original
+videos imported into the updated local app are retained under `Library/videos/`.
+Older `work/training` records are copied once, leaving their originals intact.
+None of these user files are included in the application ZIP. See **LIBRARY.md**.
 
 ## 5. Train and compare a candidate
 

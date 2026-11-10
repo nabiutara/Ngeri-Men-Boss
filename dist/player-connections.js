@@ -76,5 +76,26 @@ var PlayerConnections = (() => {
     }
     return [...result.values()];
   }
-  return {sanitize,visible,endpoint,ids,reattach,bridge};
+  function geometry(from,to){
+    const dx=to.x-from.x,dy=to.y-from.y,length=Math.hypot(dx,dy);
+    if(!Number.isFinite(length)||length<1)return null;
+    const ux=dx/length,uy=dy/length;
+    const inset=p=>{const r=p.radius||0;return r?1/Math.sqrt((ux/r)**2+(uy/(r*.34))**2)+3:3;};
+    const a=inset(from),b=inset(to);if(length<=a+b+2)return null;
+    return {x1:from.x+ux*a,y1:from.y+2+uy*a,x2:to.x-ux*b,y2:to.y+2-uy*b,ux,uy,length:length-a-b};
+  }
+  function draw(ctx,edge,settings={}){
+    const g=geometry(edge.from,edge.to);if(!g)return;
+    const estimated=edge.from.estimated||edge.to.estimated;
+    const style=settings.connectionStyle||'solid',width=edge.width||2;
+    ctx.save();ctx.globalAlpha*=(settings.connectionOpacity??75)/100*(estimated?.55:1);ctx.lineCap='round';
+    ctx.setLineDash(estimated?[6,4]:style==='dashed'?[9,5]:[]);
+    ctx.beginPath();ctx.moveTo(g.x1,g.y1);ctx.lineTo(g.x2,g.y2);
+    ctx.strokeStyle='#14271d';ctx.lineWidth=width+2;ctx.stroke();ctx.strokeStyle=edge.color;ctx.lineWidth=width;ctx.stroke();
+    ctx.setLineDash([]);ctx.fillStyle=edge.color;
+    if(style==='arrow'&&g.length>12){const size=Math.min(10,g.length*.3);ctx.beginPath();ctx.moveTo(g.x2,g.y2);ctx.lineTo(g.x2-g.ux*size-g.uy*size*.45,g.y2-g.uy*size+g.ux*size*.45);ctx.lineTo(g.x2-g.ux*size+g.uy*size*.45,g.y2-g.uy*size-g.ux*size*.45);ctx.closePath();ctx.fill();}
+    if(settings.connectionDots!==false){for(const [x,y] of [[g.x1,g.y1],[g.x2,g.y2]]){ctx.beginPath();ctx.arc(x,y,Math.max(2,width),0,Math.PI*2);ctx.fill();}}
+    ctx.restore();
+  }
+  return {sanitize,visible,endpoint,ids,reattach,bridge,geometry,draw};
 })();

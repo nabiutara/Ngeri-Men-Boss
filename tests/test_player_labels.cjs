@@ -27,3 +27,8 @@ const degenerateProject={version:1,annotations:[],calibration:{points:[{x:0,y:0}
 const safelyRestored=sandbox.sanitizeProject(degenerateProject);
 assert.equal(safelyRestored.calibration,null,'Degenerate calibration gracefully falls back to null rather than crashing');
 console.log('PASS: live label text, immediate autosave, one undo per edit, blank labels, and project round-trip with overlap override.');
+const visualProject=sandbox.sanitizeProject({...project,patternConfig:{name:'obsolete'},settings:{ringStyle:'minimal',connectionStyle:'arrow',connectionOpacity:55},players:{13:{team:'home',teamConfirmed:true}},timedNotes:[{id:'kept',time:1,text:'Keep this interpretation'}]});
+assert.equal(visualProject.settings.ringStyle,'minimal');assert.equal(visualProject.settings.connectionStyle,'arrow');assert.equal(visualProject.settings.connectionOpacity,55);assert.equal(visualProject.players[13].teamConfirmed,true);
+assert.equal(visualProject.patternConfig,undefined);assert.equal(visualProject.timedNotes[0].text,'Keep this interpretation');
+const ringProject=sandbox.sanitizeProject({...project,players:{13:{team:'home',ringColorOverride:'#123456'}},settings:{ringColorMode:'kit'},libraryVideoId:'a'.repeat(64),libraryProjectId:'b'.repeat(32)});
+assert.equal(ringProject.players[13].ringColorOverride,'#123456');assert.equal(ringProject.settings.ringColorMode,'kit');assert.equal(ringProject.libraryVideoId,'a'.repeat(64));

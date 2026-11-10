@@ -30,8 +30,8 @@ FILES += ['cloud/pseudo_training.py', 'cloud/modal_app.py', 'cloud/requirements.
           'cloud/functions/api/[[path]].js', 'cloud/migrations/0001_create_jobs.sql',
           'tests/test_cloud_client.cjs', 'tests/test_cloud_pseudo_training.py']
 
-FILES += ['TACTICAL-PATTERNS.md', 'dist/patterns.js', 'dist/patterns-ui.js',
-          'tests/test_patterns.cjs', 'tests/test_patterns_ui.cjs']
+
+FILES += ['library_store.py', 'library_http.py', 'dist/library-ui.js', 'LIBRARY.md', 'tests/test_library.py', 'tests/test_library_ui.cjs']
 
 def main():
     ARCHIVE.parent.mkdir(parents=True, exist_ok=True)
